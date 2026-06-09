@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>How Solar Panels Work</title>
+<style>
+  :root {
+    --bg-0: #0a0a0a;
+    --bg-1: #141414;
+    --ink-hi: #f5f5f5;
+    --ink-mid: #a0a0a0;
+    --ink-low: #6b7280;
+    --sun: #ffd166;
+    --electron: #5cc9ff;
+    --hole: #ff7a6b;
+    --water: #5eead4;
+    --ok: #4ade80;
+    --accent: #6366f1;
+    --panel: #141414;
+    --panel-border: rgba(255,255,255,0.10);
+    --note-bg: #fdf1c6;
+    --note-ink: #2a1e08;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+    background: var(--bg-0);
+    color: var(--ink-hi);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  header {
+    padding: 14px 32px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  header .title {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-low);
+  }
+  .step-indicator {
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-low);
+    letter-spacing: 1px;
+  }
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px 20px;
+  }
+  .stage {
+    position: relative;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow:
+      0 30px 80px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  canvas { display: block; width: 100%; height: auto; }
+  .phase-bar {
+    padding: 16px 28px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 24px;
+    align-items: center;
+    border-top: 1px solid var(--panel-border);
+    background: rgba(5, 8, 20, 0.4);
+  }
+  .phase-name {
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+    color: var(--accent);
+    transition: color 400ms ease;
+  }
+  .sim-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 250ms ease;
+  }
+  .sim-controls.visible { opacity: 1; pointer-events: auto; }
+  .sim-controls .sim-readout {
+    font-size: 14px;
+    color: var(--ink-mid);
+    letter-spacing: 0.2px;
+    min-width: 210px;
+    text-align: right;
+  }
+  .sim-controls .sim-readout strong {
+    color: var(--sun);
+    font-variant-numeric: tabular-nums;
+    font-size: 16px;
+  }
+  .sim-controls button.sim-btn {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 209, 102, 0.35);
+    background: rgba(255, 209, 102, 0.08);
+    color: #ffe08a;
+    cursor: pointer;
+    transition: background 150ms, border-color 150ms;
+    white-space: nowrap;
+  }
+  .sim-controls button.sim-btn:hover { background: rgba(255, 209, 102, 0.18); border-color: rgba(255, 209, 102, 0.6); }
+  .sim-controls button.sim-btn.alt {
+    border-color: rgba(94, 234, 212, 0.35);
+    background: rgba(94, 234, 212, 0.08);
+    color: #99f6e4;
+  }
+  .sim-controls button.sim-btn.alt:hover { background: rgba(94, 234, 212, 0.18); border-color: rgba(94, 234, 212, 0.6); }
+  .sim-controls button.sim-btn.hidden { display: none; }
+  .content { margin-top: 14px; }
+  .notes-card {
+    background: var(--note-bg);
+    color: var(--note-ink);
+    padding: 16px 22px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.55;
+    position: relative;
+    box-shadow:
+      0 14px 40px rgba(255, 209, 102, 0.08),
+      inset 0 0 0 1px rgba(0,0,0,0.02);
+  }
+  .step-heading {
+    font-weight: 700;
+    font-size: 16px;
+    color: #7a3a00;
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+  }
+  .notes-card p { margin: 0 0 6px; }
+  .notes-card strong { font-weight: 700; color: #2a1e08; }
+
+  .notebook-prompt {
+    margin-top: 10px;
+    padding: 12px 16px;
+    background: linear-gradient(90deg, rgba(255, 209, 102, 0.15), rgba(244, 114, 182, 0.12));
+    border: 1.5px solid rgba(255, 209, 102, 0.45);
+    border-left: 5px solid #ffd166;
+    border-radius: 10px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #f3d589;
+  }
+  .notebook-prompt .np-tag {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    padding: 4px 9px;
+    background: #ffd166;
+    color: #2a1e08;
+    border-radius: 5px;
+    margin-top: 1px;
+  }
+  .notebook-prompt strong { color: #ffd166; font-weight: 700; }
+
+  nav {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: var(--ink-hi);
+    cursor: pointer;
+    transition: background 150ms, transform 50ms, border-color 150ms;
+  }
+  button:hover:not(:disabled) {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.15);
+  }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: 0.3; cursor: not-allowed; }
+  button.primary {
+    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+    color: #f5f5ff;
+    border-color: rgba(99, 102, 241, 0.55);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
+  }
+  button.primary:hover { filter: brightness(1.08); }
+  .btn-group { display: flex; gap: 10px; }
+  @media (max-width: 720px) {
+    .phase-bar { grid-template-columns: 1fr; }
+    .sim-controls { justify-content: space-between; flex-wrap: wrap; }
+    .phase-name { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="title">How Solar Panels Work</div>
+  <div class="step-indicator" id="stepIndicator">01 / 10</div>
+</header>
+
+<main>
+  <div class="stage">
+    <canvas id="canvas" width="1600" height="650"></canvas>
+    <div class="phase-bar">
+      <div class="phase-name" id="phaseName">Step 1</div>
+      <div class="sim-controls" id="simControls">
+        <button class="sim-btn alt" id="ctrlA">Action A</button>
+        <button class="sim-btn" id="ctrlB">Action B</button>
+        <div class="sim-readout" id="simReadout"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="notes-card">
+      <div class="step-heading" id="stepHeading">Step 1</div>
+      <p id="notes"></p>
+    </div>
+    <div class="notebook-prompt" id="notebookPrompt">
+      <div class="np-tag">✎ NOTES</div>
+      <div id="notebookText"></div>
+    </div>
+  </div>
+
+  <nav>
+    <button id="resetBtn">Start Over</button>
+    <div class="btn-group">
+      <button id="prevBtn">← Back</button>
+      <button id="nextBtn" class="primary">Next →</button>
+    </div>
+  </nav>
+</main>
+
+<script>
+// =====================================================
+//  Canvas setup
+// =====================================================
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const W = canvas.width;   // 1600
+const H = canvas.height;  // 650
+const MID = H / 2;
+
+let currentSceneIdx = 0;
+let animT = 0;
+let sceneFadeT = 0;
+let sceneLocal = {};
+function clearField() { sceneLocal = {}; }
+
+// Draggable sun (shared across scenes that use it)
+let sun = { x: 760, y: 130 };
+let dragging = false;
+
+// Colors
+const C_SUN = '#ffd166';
+const C_SUN2 = '#ffb703';
+const C_PHOTON = '#ffe08a';
+const C_ELECTRON = '#5cc9ff';
+const C_ELECTRON_GLOW = 'rgba(92, 201, 255,';
+const C_HOLE = '#ff7a6b';
+const C_HOLE_GLOW = 'rgba(255, 122, 107,';
+const C_WATER = '#5eead4';
+const C_WIRE = '#e0a070';
+const C_ACCENT = '#6366f1';
+const C_OK = '#4ade80';
+
+// =====================================================
+//  Helpers
+// =====================================================
+function lerp(a, b, t) { return a + (b - a) * t; }
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function smooth(t) { return t * t * (3 - 2 * t); }
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+// Glassmorphic label with tapered leader (matches synapse drawLabel)
+function drawLabel(ctx, lx, ly, dotX, dotY, text, color, align) {
+  ctx.save();
+  align = align || 'left';
+  // tapered leader
+  const grad = ctx.createLinearGradient(lx, ly, dotX, dotY);
+  grad.addColorStop(0, `rgba(${color},0.85)`);
+  grad.addColorStop(1, `rgba(${color},0.25)`);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(dotX, dotY); ctx.stroke();
+  // dot glow + pulse ring
+  const pulse = (Math.sin(animT / 600 + dotY * 0.03) + 1) * 0.5;
+  const dg = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 12);
+  dg.addColorStop(0, `rgba(${color},0.5)`);
+  dg.addColorStop(1, `rgba(${color},0)`);
+  ctx.fillStyle = dg;
+  ctx.beginPath(); ctx.arc(dotX, dotY, 12, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = `rgba(${color},${0.25 + pulse * 0.3})`;
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(dotX, dotY, 5 + pulse * 2, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = `rgb(${color})`;
+  ctx.beginPath(); ctx.arc(dotX, dotY, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  ctx.beginPath(); ctx.arc(dotX - 1, dotY - 1, 1.3, 0, Math.PI * 2); ctx.fill();
+  // pill
+  ctx.font = '600 14px system-ui, -apple-system';
+  const tw = ctx.measureText(text).width;
+  const padX = 11, padY = 7, h = 28;
+  const w = tw + padX * 2;
+  const bx = align === 'right' ? lx - w : lx;
+  const by = ly - h / 2;
+  ctx.shadowColor = `rgba(${color},0.35)`;
+  ctx.shadowBlur = 18; ctx.shadowOffsetY = 3;
+  const bg = ctx.createLinearGradient(bx, by, bx, by + h);
+  bg.addColorStop(0, 'rgba(28,32,48,0.94)');
+  bg.addColorStop(1, 'rgba(14,18,30,0.94)');
+  ctx.fillStyle = bg;
+  roundRect(ctx, bx, by, w, h, 8); ctx.fill();
+  ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+  ctx.strokeStyle = `rgba(${color},0.55)`;
+  ctx.lineWidth = 1; roundRect(ctx, bx, by, w, h, 8); ctx.stroke();
+  // top gloss
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.beginPath(); ctx.moveTo(bx + 6, by + 1); ctx.lineTo(bx + w - 6, by + 1); ctx.stroke();
+  ctx.fillStyle = `rgb(${color})`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, bx + padX, ly + 0.5);
+  ctx.restore();
+}
+
+// --- Sun ---
+function drawSun(ctx, x, y, r, intensity, grabbable) {
+  ctx.save();
+  // outer glow scales with intensity
+  const glowR = r * (3.2 + intensity * 1.4);
+  const g = ctx.createRadialGradient(x, y, 0, x, y, glowR);
+  g.addColorStop(0, `rgba(255, 209, 102, ${0.45 + intensity * 0.25})`);
+  g.addColorStop(0.4, 'rgba(255, 183, 3, 0.12)');
+  g.addColorStop(1, 'rgba(255, 183, 3, 0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, glowR, 0, Math.PI * 2); ctx.fill();
+  // rays
+  const nRays = 12;
+  ctx.strokeStyle = `rgba(255, 209, 102, ${0.5 + intensity * 0.4})`;
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  for (let i = 0; i < nRays; i++) {
+    const a = (i / nRays) * Math.PI * 2 + animT / 4000;
+    const r1 = r * 1.35, r2 = r * (1.75 + 0.25 * Math.sin(animT / 500 + i));
+    ctx.beginPath();
+    ctx.moveTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
+    ctx.lineTo(x + Math.cos(a) * r2, y + Math.sin(a) * r2);
+    ctx.stroke();
+  }
+  // body
+  const bg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+  bg.addColorStop(0, '#fff4cf');
+  bg.addColorStop(0.6, C_SUN);
+  bg.addColorStop(1, C_SUN2);
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  if (grabbable) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.setLineDash([4, 5]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, r + 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '600 12px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('drag me', x, y + r + 26);
+  }
+  ctx.restore();
+}
+
+// light beam from sun to a target rectangle
+function drawBeam(ctx, sx, sy, tx, ty, halfW, intensity) {
+  if (intensity <= 0.02) return;
+  ctx.save();
+  const ang = Math.atan2(ty - sy, tx - sx);
+  const perp = ang + Math.PI / 2;
+  const ox = Math.cos(perp) * halfW, oy = Math.sin(perp) * halfW;
+  const grad = ctx.createLinearGradient(sx, sy, tx, ty);
+  grad.addColorStop(0, `rgba(255, 224, 138, ${0.32 * intensity})`);
+  grad.addColorStop(1, `rgba(255, 224, 138, ${0.05 * intensity})`);
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(sx - ox * 0.2, sy - oy * 0.2);
+  ctx.lineTo(sx + ox * 0.2, sy + oy * 0.2);
+  ctx.lineTo(tx + ox, ty + oy);
+  ctx.lineTo(tx - ox, ty - oy);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+// --- Solar panel drawn as a tilted parallelogram (iso look) ---
+// cx,cy = center of panel face; skew = horizontal lean; glow = intensity sheen
+function drawPanel(ctx, cx, cy, w, h, skew, intensity, cols, rows) {
+  ctx.save();
+  cols = cols || 6; rows = rows || 4;
+  const hw = w / 2, hh = h / 2;
+  // corners (top edge pushed by skew for a tilt feel)
+  const tl = { x: cx - hw + skew, y: cy - hh };
+  const tr = { x: cx + hw + skew, y: cy - hh };
+  const br = { x: cx + hw, y: cy + hh };
+  const bl = { x: cx - hw, y: cy + hh };
+  function lerpPt(a, b, t) { return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) }; }
+  // frame shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 16;
+  ctx.fillStyle = '#0c1830';
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // base
+  const base = ctx.createLinearGradient(tl.x, tl.y, bl.x, bl.y);
+  base.addColorStop(0, '#15326a');
+  base.addColorStop(1, '#0b1c44');
+  ctx.fillStyle = base;
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
+  ctx.closePath(); ctx.fill();
+  // cells grid
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const a = lerpPt(lerpPt(tl, tr, c / cols), lerpPt(bl, br, c / cols), r / rows);
+      const b = lerpPt(lerpPt(tl, tr, (c + 1) / cols), lerpPt(bl, br, (c + 1) / cols), r / rows);
+      const d = lerpPt(lerpPt(tl, tr, c / cols), lerpPt(bl, br, c / cols), (r + 1) / rows);
+      const e = lerpPt(lerpPt(tl, tr, (c + 1) / cols), lerpPt(bl, br, (c + 1) / cols), (r + 1) / rows);
+      const cell = ctx.createLinearGradient(a.x, a.y, e.x, e.y);
+      const lit = 0.12 + intensity * 0.35;
+      cell.addColorStop(0, `rgba(56, 116, 220, ${0.55 + lit})`);
+      cell.addColorStop(1, `rgba(20, 50, 120, 0.9)`);
+      ctx.fillStyle = cell;
+      ctx.beginPath();
+      ctx.moveTo(a.x + 2, a.y + 2); ctx.lineTo(b.x - 2, b.y + 2);
+      ctx.lineTo(e.x - 2, e.y - 2); ctx.lineTo(d.x + 2, d.y - 2);
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  // sheen sweep (intensity)
+  if (intensity > 0.05) {
+    const sg = ctx.createLinearGradient(tl.x, tl.y, br.x, br.y);
+    sg.addColorStop(0, `rgba(255,255,255,${0.04 + intensity * 0.16})`);
+    sg.addColorStop(0.5, 'rgba(255,255,255,0.0)');
+    sg.addColorStop(1, `rgba(255,255,255,${intensity * 0.06})`);
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
+    ctx.closePath(); ctx.fill();
+  }
+  // frame edge
+  ctx.strokeStyle = '#9fb3d8'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
+  ctx.closePath(); ctx.stroke();
+  ctx.restore();
+  return { tl, tr, br, bl, out: { x: br.x, y: br.y } };
+}
+
+// --- Motor with spinning blades ---
+function drawMotor(ctx, x, y, r, angle, intensity) {
+  ctx.save();
+  // housing
+  const hg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.2, x, y, r * 1.3);
+  hg.addColorStop(0, '#3a3f4a'); hg.addColorStop(1, '#15181f');
+  ctx.fillStyle = hg;
+  ctx.beginPath(); ctx.arc(x, y, r * 1.25, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, r * 1.25, 0, Math.PI * 2); ctx.stroke();
+  // blades
+  ctx.translate(x, y); ctx.rotate(angle);
+  const spin = intensity > 0.05;
+  for (let i = 0; i < 3; i++) {
+    ctx.rotate((Math.PI * 2) / 3);
+    const bg = ctx.createLinearGradient(0, 0, 0, -r);
+    bg.addColorStop(0, spin ? '#7dd3fc' : '#5b6675');
+    bg.addColorStop(1, spin ? '#3b82f6' : '#3a414c');
+    ctx.fillStyle = bg;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.quadraticCurveTo(r * 0.5, -r * 0.55, r * 0.18, -r);
+    ctx.quadraticCurveTo(0, -r * 0.85, -r * 0.18, -r);
+    ctx.quadraticCurveTo(-r * 0.5, -r * 0.55, 0, 0);
+    ctx.closePath(); ctx.fill();
+  }
+  // hub
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // motion blur arc when spinning fast
+  if (intensity > 0.4) {
+    ctx.save();
+    ctx.strokeStyle = `rgba(125, 211, 252, ${(intensity - 0.4) * 0.5})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(x, y, r * 1.05, angle, angle + Math.PI * 1.2); ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// --- copper wire path ---
+function drawWire(ctx, pts, flow, color) {
+  ctx.save();
+  ctx.strokeStyle = color || C_WIRE;
+  ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,235,210,0.3)'; ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // electron flow dots
+  if (flow > 0.02) {
+    let total = 0; const segs = [];
+    for (let i = 1; i < pts.length; i++) {
+      const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+      segs.push(d); total += d;
+    }
+    const n = Math.max(3, Math.round(total / 60));
+    for (let k = 0; k < n; k++) {
+      let d = ((k / n) + (animT / 1400) * flow) % 1 * total;
+      let i = 0;
+      while (i < segs.length && d > segs[i]) { d -= segs[i]; i++; }
+      if (i >= segs.length) i = segs.length - 1;
+      const f = segs[i] ? d / segs[i] : 0;
+      const px = lerp(pts[i].x, pts[i + 1].x, f);
+      const py = lerp(pts[i].y, pts[i + 1].y, f);
+      ctx.fillStyle = C_ELECTRON;
+      ctx.shadowColor = C_ELECTRON; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+  ctx.restore();
+}
+
+// --- horizontal meter bar ---
+function drawMeter(ctx, x, y, w, label, frac, valueText, color, pinned) {
+  ctx.save();
+  ctx.font = '600 15px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(245,245,245,0.85)';
+  ctx.fillText(label, x, y - 16);
+  // track
+  ctx.fillStyle = 'rgba(255,255,255,0.08)';
+  roundRect(ctx, x, y, w, 16, 8); ctx.fill();
+  // fill
+  const fw = clamp(frac, 0, 1) * w;
+  const g = ctx.createLinearGradient(x, y, x + w, y);
+  g.addColorStop(0, color); g.addColorStop(1, color);
+  ctx.fillStyle = g;
+  if (fw > 4) { roundRect(ctx, x, y, fw, 16, 8); ctx.fill(); }
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
+  roundRect(ctx, x, y, w, 16, 8); ctx.stroke();
+  // value
+  ctx.fillStyle = color; ctx.font = '700 16px system-ui';
+  ctx.textAlign = 'right';
+  ctx.fillText(valueText, x + w, y - 16);
+  if (pinned) {
+    ctx.fillStyle = 'rgba(160,160,160,0.8)'; ctx.font = '600 11px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText('stays nearly constant', x, y + 30);
+  }
+  ctx.restore();
+}
+
+// intensity from sun position relative to an ideal overhead point
+function overheadIntensity(idealX, idealY, rangeX, rangeY) {
+  const dx = (sun.x - idealX) / rangeX;
+  const dy = (sun.y - idealY) / rangeY;
+  return clamp(1 - Math.sqrt(dx * dx + dy * dy), 0, 1);
+}
+
+// =====================================================
+//  SCENE 1 — The Whole System
+// =====================================================
+const PANEL1 = { x: 470, y: 440 };
+const MOTOR1 = { x: 1120, y: 360 };
+const scene1 = {
+  phase: 'Step 1: The Whole System',
+  phaseColor: C_SUN,
+  draggableSun: true,
+  isInteractive: true,
+  notes: "A <strong>solar panel</strong> turns sunlight into <strong>electricity</strong>. The panel connects through wires to a <strong>motor</strong>. When light lands on the panel, the motor spins. More light means a faster spin. No light means no motion.",
+  notebook: "Drag the sun across the sky. Write what happens to the <strong>motor</strong> when the sun is <strong>directly overhead</strong> versus <strong>low and to the side</strong>. Sketch the path: <strong>light to panel to motor</strong>.",
+  setup() { clearField(); sun = { x: 470, y: 120 }; sceneLocal = { motorAngle: 0, intensity: 0 }; },
+  update(dt) {
+    sceneLocal.intensity = overheadIntensity(PANEL1.x, 150, 430, 240);
+    sceneLocal.motorAngle += sceneLocal.intensity * dt * 0.02;
+  },
+  readout() {
+    const pct = Math.round(sceneLocal.intensity * 100);
+    const state = sceneLocal.intensity > 0.05 ? 'spinning' : 'stopped';
+    return `Sunlight: <strong>${pct}%</strong> · Motor: <strong>${state}</strong>`;
+  },
+  draw(ctx, t) {
+    const I = sceneLocal.intensity;
+    drawBeam(ctx, sun.x, sun.y, PANEL1.x, PANEL1.y, 150, I);
+    const p = drawPanel(ctx, PANEL1.x, PANEL1.y, 300, 180, 60, I);
+    // wires from panel out-corner to motor
+    drawWire(ctx, [
+      { x: p.br.x, y: p.br.y }, { x: p.br.x + 40, y: p.br.y + 30 },
+      { x: 820, y: 470 }, { x: MOTOR1.x, y: 470 }, { x: MOTOR1.x, y: MOTOR1.y + 70 }
+    ], I, C_WIRE);
+    drawMotor(ctx, MOTOR1.x, MOTOR1.y, 70, sceneLocal.motorAngle, I);
+    drawLabel(ctx, MOTOR1.x + 110, MOTOR1.y - 30, MOTOR1.x + 55, MOTOR1.y - 40, 'Motor', '125, 211, 252', 'left');
+    drawLabel(ctx, PANEL1.x - 250, PANEL1.y - 20, PANEL1.x - 110, PANEL1.y - 30, 'Solar panel', '147, 179, 216', 'right');
+    drawSun(ctx, sun.x, sun.y, 42, I, true);
+  }
+};
+
+// =====================================================
+//  SCENE 2 — Do Real Work (water pump)
+// =====================================================
+const PANEL2 = { x: 360, y: 430 };
+const MOTOR2 = { x: 760, y: 360 };
+const scene2 = {
+  phase: 'Step 2: Do Real Work',
+  phaseColor: C_WATER,
+  draggableSun: true,
+  isInteractive: true,
+  notes: "Electricity from the panel can do real <strong>work</strong>. Here the motor drives a <strong>water pump</strong> that pushes water up a tube into a tank. The brighter the light, the <strong>faster</strong> the water moves. You are watching <strong>energy change form</strong>: light to electricity to motion to moving water.",
+  notebook: "Keep the sun bright and watch the <strong>water level</strong> rise. Record the <strong>flow rate</strong> at full sun and at half sun. Write one sentence answering: where did the energy come from?",
+  setup() { clearField(); sun = { x: 360, y: 120 }; sceneLocal = { motorAngle: 0, intensity: 0, level: 0, moved: 0, drops: [] }; },
+  update(dt) {
+    const I = overheadIntensity(PANEL2.x, 150, 430, 240);
+    sceneLocal.intensity = I;
+    sceneLocal.motorAngle += I * dt * 0.02;
+    const rate = I * 0.9; // mL/s scaled
+    sceneLocal.moved += rate * dt / 1000 * 100;
+    sceneLocal.level = clamp(sceneLocal.level + rate * dt / 1000 * 0.18, 0, 1);
+    if (sceneLocal.level >= 1) sceneLocal.level = 1;
+    // droplets along tube
+    if (I > 0.05 && Math.random() < I * 0.5) sceneLocal.drops.push({ p: 0 });
+    sceneLocal.drops.forEach(d => d.p += I * dt / 1000 * 0.7);
+    sceneLocal.drops = sceneLocal.drops.filter(d => d.p < 1);
+  },
+  readout() {
+    const rate = (sceneLocal.intensity * 90).toFixed(0);
+    return `Flow: <strong>${rate} mL/s</strong> · Moved: <strong>${Math.round(sceneLocal.moved)} mL</strong>`;
+  },
+  draw(ctx, t) {
+    const I = sceneLocal.intensity;
+    drawBeam(ctx, sun.x, sun.y, PANEL2.x, PANEL2.y, 130, I);
+    const p = drawPanel(ctx, PANEL2.x, PANEL2.y, 240, 150, 48, I);
+    drawWire(ctx, [
+      { x: p.br.x, y: p.br.y }, { x: 560, y: 470 }, { x: MOTOR2.x, y: 470 }, { x: MOTOR2.x, y: MOTOR2.y + 58 }
+    ], I, C_WIRE);
+    drawMotor(ctx, MOTOR2.x, MOTOR2.y, 56, sceneLocal.motorAngle, I);
+    // pump + tube + tank on the right
+    const tubePts = [
+      { x: MOTOR2.x + 56, y: MOTOR2.y }, { x: 920, y: 360 }, { x: 980, y: 200 }, { x: 1120, y: 200 }
+    ];
+    // tube casing
+    ctx.save();
+    ctx.strokeStyle = 'rgba(180,200,210,0.35)'; ctx.lineWidth = 22; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); tubePts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
+    ctx.strokeStyle = 'rgba(94,234,212,0.22)'; ctx.lineWidth = 14;
+    ctx.beginPath(); tubePts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
+    ctx.restore();
+    // droplets
+    const segLen = [];
+    let tot = 0;
+    for (let i = 1; i < tubePts.length; i++) { const d = Math.hypot(tubePts[i].x - tubePts[i - 1].x, tubePts[i].y - tubePts[i - 1].y); segLen.push(d); tot += d; }
+    sceneLocal.drops.forEach(drop => {
+      let d = drop.p * tot, i = 0;
+      while (i < segLen.length && d > segLen[i]) { d -= segLen[i]; i++; }
+      if (i >= segLen.length) i = segLen.length - 1;
+      const f = segLen[i] ? d / segLen[i] : 0;
+      const px = lerp(tubePts[i].x, tubePts[i + 1].x, f);
+      const py = lerp(tubePts[i].y, tubePts[i + 1].y, f);
+      ctx.fillStyle = C_WATER; ctx.shadowColor = C_WATER; ctx.shadowBlur = 8;
+      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    });
+    // tank
+    const tank = { x: 1120, y: 180, w: 150, h: 200 };
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,220,230,0.6)'; ctx.lineWidth = 4;
+    roundRect(ctx, tank.x, tank.y, tank.w, tank.h, 10); ctx.stroke();
+    const wl = tank.y + tank.h - sceneLocal.level * (tank.h - 8);
+    const wg = ctx.createLinearGradient(0, wl, 0, tank.y + tank.h);
+    wg.addColorStop(0, 'rgba(94,234,212,0.85)'); wg.addColorStop(1, 'rgba(45,150,160,0.9)');
+    ctx.fillStyle = wg;
+    roundRect(ctx, tank.x + 3, wl, tank.w - 6, tank.y + tank.h - wl - 3, 8); ctx.fill();
+    ctx.restore();
+    drawLabel(ctx, tank.x + tank.w + 30, tank.y + 30, tank.x + tank.w - 6, tank.y + 30, 'Water tank', '94, 234, 212', 'left');
+    drawLabel(ctx, MOTOR2.x - 70, MOTOR2.y - 90, MOTOR2.x, MOTOR2.y - 50, 'Pump', '125, 211, 252', 'right');
+    drawSun(ctx, sun.x, sun.y, 38, I, true);
+  }
+};
+
+// =====================================================
+//  SCENE 3 — Make a Prediction (black box)
+// =====================================================
+const scene3 = {
+  phase: 'Step 3: Make a Prediction',
+  phaseColor: C_ACCENT,
+  notes: "You have seen light go in and work come out. Before we open the panel, make a <strong>prediction</strong>. Right now the panel is a <strong>black box</strong>. Your job as an engineer is to guess what is happening inside before you look.",
+  notebook: "Predict: <strong>HOW</strong> does light become electricity inside the panel? Draw the panel as a box. Label the <strong>input</strong> (light) and the <strong>output</strong> (electric current). Write your best guess for the hidden mechanism.",
+  setup() { clearField(); sceneLocal = { photons: [] }; },
+  update(dt) {
+    if (Math.random() < 0.25) sceneLocal.photons.push({ x: 120 + Math.random() * 200, y: 80, p: 0 });
+    sceneLocal.photons.forEach(ph => ph.p += dt / 1000 * 0.6);
+    sceneLocal.photons = sceneLocal.photons.filter(ph => ph.p < 1);
+  },
+  draw(ctx, t) {
+    const bx = 600, by = 230, bw = 400, bh = 220;
+    // incoming photons (left, into box)
+    sceneLocal.photons.forEach(ph => {
+      const x = lerp(ph.x, bx, smooth(ph.p));
+      const y = lerp(ph.y, by + bh / 2, smooth(ph.p));
+      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    });
+    drawLabel(ctx, 250, by + bh / 2, 480, by + bh / 2, 'Light goes IN', '255, 209, 102', 'right');
+    // the black box
+    ctx.save();
+    const g = ctx.createLinearGradient(bx, by, bx, by + bh);
+    g.addColorStop(0, '#10131c'); g.addColorStop(1, '#05060a');
+    ctx.fillStyle = g;
+    ctx.shadowColor = 'rgba(99,102,241,0.3)'; ctx.shadowBlur = 40;
+    roundRect(ctx, bx, by, bw, bh, 18); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(99,102,241,0.5)'; ctx.lineWidth = 2;
+    roundRect(ctx, bx, by, bw, bh, 18); ctx.stroke();
+    // big question mark
+    ctx.fillStyle = `rgba(99,102,241,${0.5 + 0.3 * Math.sin(t / 600)})`;
+    ctx.font = '900 130px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('?', bx + bw / 2, by + bh / 2 + 6);
+    ctx.fillStyle = 'rgba(245,245,245,0.5)'; ctx.font = '600 16px system-ui';
+    ctx.fillText('SOLAR PANEL', bx + bw / 2, by + bh - 26);
+    ctx.restore();
+    // output current arrow (right)
+    drawWire(ctx, [{ x: bx + bw, y: by + bh / 2 }, { x: bx + bw + 180, y: by + bh / 2 }], 1, C_WIRE);
+    drawLabel(ctx, bx + bw + 200, by + bh / 2, bx + bw + 180, by + bh / 2, 'Current comes OUT', '125, 211, 252', 'left');
+  }
+};
+
+// =====================================================
+//  SCENE 4 — Inside the Panel (exploded layers)
+// =====================================================
+const LAYERS = [
+  { name: 'Glass cover', c: '173, 216, 255', desc: 'protects' },
+  { name: 'Anti-reflective coating', c: '94, 234, 212', desc: 'traps light' },
+  { name: 'Front contacts', c: '203, 213, 225', desc: 'collect current' },
+  { name: 'N-type silicon', c: '92, 201, 255', desc: 'extra electrons' },
+  { name: 'P-N junction', c: '255, 209, 102', desc: 'the engine' },
+  { name: 'P-type silicon', c: '255, 122, 107', desc: 'extra holes' },
+  { name: 'Back contact', c: '148, 163, 184', desc: 'closes circuit' }
+];
+const scene4 = {
+  phase: 'Step 4: Inside the Panel',
+  phaseColor: C_ELECTRON,
+  notes: "A solar cell is built in <strong>layers</strong>. A <strong>glass cover</strong> protects it. An <strong>anti-reflective coating</strong> traps light so none is wasted. Thin <strong>metal fingers</strong> collect current on top. The heart is two layers of <strong>silicon</strong>: an <strong>n-type</strong> layer with extra electrons and a <strong>p-type</strong> layer with extra holes. A <strong>back contact</strong> closes the circuit.",
+  notebook: "Sketch the layer stack top to bottom. Label: <strong>glass, anti-reflective coating, front contacts, n-type silicon, p-type silicon, back contact</strong>. Star the two silicon layers as the part that does the real work.",
+  setup() { clearField(); sceneLocal = { explode: 0 }; },
+  update(dt) { sceneLocal.explode = clamp(sceneLocal.explode + dt / 1100, 0, 1); },
+  draw(ctx, t) {
+    const cx = 560, topY = 90, lw = 460, lh = 44;
+    const gap = smooth(sceneLocal.explode) * 22;
+    const stackH = LAYERS.length * lh;
+    LAYERS.forEach((L, i) => {
+      const isJunction = L.name === 'P-N junction';
+      const h = isJunction ? 10 : lh - 8;
+      const y = topY + i * (lh + gap) + (isJunction ? (lh - h) / 2 : 0);
+      ctx.save();
+      const g = ctx.createLinearGradient(cx, y, cx, y + h);
+      g.addColorStop(0, `rgba(${L.c},0.9)`);
+      g.addColorStop(1, `rgba(${L.c},0.45)`);
+      ctx.fillStyle = g;
+      ctx.shadowColor = `rgba(${L.c},0.4)`; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
+      roundRect(ctx, cx, y, lw, h, 7); ctx.fill();
+      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      // top white edge highlight
+      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(cx + 6, y + 1); ctx.lineTo(cx + lw - 6, y + 1); ctx.stroke();
+      // front contact fingers
+      if (L.name === 'Front contacts') {
+        ctx.fillStyle = 'rgba(120,130,145,0.9)';
+        for (let f = 0; f < 14; f++) { ctx.fillRect(cx + 20 + f * 31, y - 6, 4, h + 6); }
+      }
+      ctx.restore();
+      // label
+      drawLabel(ctx, cx + lw + 60, y + h / 2, cx + lw, y + h / 2, L.name + ' · ' + L.desc, L.c, 'left');
+    });
+    // photon entering top
+    const py = topY - 40 + ((t / 12) % (stackH + 60));
+    if (py < topY + 4 * (lh + gap)) {
+      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 12;
+      ctx.beginPath(); ctx.arc(cx + lw / 2, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    }
+  }
+};
+
+// =====================================================
+//  SCENE 5 — The Photoelectric Effect
+// =====================================================
+const scene5 = {
+  phase: 'Step 5: The Photoelectric Effect',
+  phaseColor: C_SUN,
+  notes: "This is the key idea. A particle of light is a <strong>photon</strong>. When a photon with enough <strong>energy</strong> strikes a silicon atom, it knocks an <strong>electron</strong> loose. The freed electron leaves behind an empty spot called a <strong>hole</strong>. This is the <strong>photoelectric effect</strong>: light energy becomes a free electric charge.",
+  notebook: "Draw a <strong>photon</strong> hitting silicon and freeing an <strong>electron</strong> (negative). Label the <strong>hole</strong> it leaves behind (positive). Write the rule: <strong>enough photon energy = one freed electron</strong>.",
+  setup() {
+    clearField();
+    const atoms = [];
+    const cols = 9, rows = 4;
+    const x0 = 360, y0 = 230, dx = 110, dy = 95;
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+      atoms.push({ x: x0 + c * dx + (r % 2) * 55, y: y0 + r * dy, freed: 0 });
+    sceneLocal = { atoms, photons: [], electrons: [], spawnT: 0 };
+  },
+  update(dt) {
+    sceneLocal.spawnT += dt;
+    if (sceneLocal.spawnT > 520) {
+      sceneLocal.spawnT = 0;
+      const a = sceneLocal.atoms[Math.floor(Math.random() * sceneLocal.atoms.length)];
+      sceneLocal.photons.push({ x: a.x - 260, y: a.y - 240, tx: a.x, ty: a.y, p: 0, atom: a });
+    }
+    sceneLocal.photons.forEach(ph => {
+      ph.p += dt / 1000 * 1.1;
+      if (ph.p >= 1 && !ph.done) {
+        ph.done = true; ph.atom.freed = 1;
+        sceneLocal.electrons.push({ x: ph.atom.x, y: ph.atom.y, vx: (Math.random() - 0.5) * 1.2, vy: -1.6 - Math.random(), life: 1 });
+      }
+    });
+    sceneLocal.photons = sceneLocal.photons.filter(ph => ph.p < 1.05);
+    sceneLocal.electrons.forEach(e => { e.x += e.vx; e.y += e.vy; e.vy += 0.01; e.life -= dt / 2200; });
+    sceneLocal.electrons = sceneLocal.electrons.filter(e => e.life > 0);
+    sceneLocal.atoms.forEach(a => { if (a.freed > 0) a.freed = Math.max(0, a.freed - dt / 2600); });
+  },
+  draw(ctx, t) {
+    // silicon lattice
+    ctx.save();
+    ctx.strokeStyle = 'rgba(120,140,170,0.18)'; ctx.lineWidth = 2;
+    sceneLocal.atoms.forEach(a => {
+      sceneLocal.atoms.forEach(b => {
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > 1 && d < 130) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+      });
+    });
+    ctx.restore();
+    sceneLocal.atoms.forEach(a => {
+      const holeGlow = a.freed;
+      // hole highlight
+      if (holeGlow > 0.02) {
+        const hg = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, 26);
+        hg.addColorStop(0, C_HOLE_GLOW + (holeGlow * 0.7) + ')');
+        hg.addColorStop(1, C_HOLE_GLOW + '0)');
+        ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(a.x, a.y, 26, 0, Math.PI * 2); ctx.fill();
+      }
+      const ag = ctx.createRadialGradient(a.x - 4, a.y - 4, 1, a.x, a.y, 16);
+      if (holeGlow > 0.5) { ag.addColorStop(0, '#ffb3a8'); ag.addColorStop(1, '#b3463a'); }
+      else { ag.addColorStop(0, '#9fb6d8'); ag.addColorStop(1, '#46557a'); }
+      ctx.fillStyle = ag;
+      ctx.beginPath(); ctx.arc(a.x, a.y, 15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = '700 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Si', a.x, a.y);
+      if (holeGlow > 0.5) {
+        ctx.fillStyle = C_HOLE; ctx.font = '900 18px system-ui';
+        ctx.fillText('+', a.x + 20, a.y - 16);
+      }
+    });
+    // photons
+    sceneLocal.photons.forEach(ph => {
+      const x = lerp(ph.x, ph.tx, smooth(clamp(ph.p, 0, 1)));
+      const y = lerp(ph.y, ph.ty, smooth(clamp(ph.p, 0, 1)));
+      ctx.strokeStyle = `rgba(255,224,138,0.4)`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(ph.x, ph.y); ctx.lineTo(x, y); ctx.stroke();
+      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    });
+    // freed electrons
+    sceneLocal.electrons.forEach(e => {
+      ctx.save(); ctx.globalAlpha = clamp(e.life, 0, 1);
+      const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, 16);
+      g.addColorStop(0, C_ELECTRON_GLOW + '0.6)'); g.addColorStop(1, C_ELECTRON_GLOW + '0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(e.x, e.y, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = C_ELECTRON; ctx.beginPath(); ctx.arc(e.x, e.y, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '900 12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('−', e.x, e.y);
+      ctx.restore();
+    });
+    drawLabel(ctx, 200, 150, 360, 200, 'Photon (light)', '255, 209, 102', 'right');
+    drawLabel(ctx, 1140, 180, 1040, 230, 'Freed electron', '92, 201, 255', 'left');
+  }
+};
+
+// =====================================================
+//  SCENE 6 — The P-N Junction
+// =====================================================
+const scene6 = {
+  phase: 'Step 6: The P-N Junction',
+  phaseColor: C_OK,
+  notes: "Free electrons alone are not enough. They need a <strong>push</strong> in one direction. Where the <strong>n-type</strong> and <strong>p-type</strong> silicon meet, a built-in <strong>electric field</strong> forms at the <strong>junction</strong>. This field sweeps freed electrons one way and holes the other. That one-way flow is <strong>direct current</strong> (DC), pushed out through the wire to do work.",
+  notebook: "Draw the <strong>n-type</strong> and <strong>p-type</strong> layers with the <strong>junction</strong> between them. Add an arrow for the <strong>built-in field</strong>. Show electrons flowing out the wire, through the motor, and back. Label this <strong>DC current</strong>.",
+  setup() {
+    clearField();
+    sceneLocal = { carriers: [], spawnT: 0, motorAngle: 0 };
+  },
+  update(dt) {
+    sceneLocal.motorAngle += dt * 0.012;
+    sceneLocal.spawnT += dt;
+    if (sceneLocal.spawnT > 600) {
+      sceneLocal.spawnT = 0;
+      // freed electron-hole pair near junction
+      sceneLocal.carriers.push({ type: 'e', x: 800 + (Math.random() - 0.5) * 30, y: 260 + Math.random() * 120, stage: 'sweep', p: 0 });
+      sceneLocal.carriers.push({ type: 'h', x: 800 + (Math.random() - 0.5) * 30, y: 260 + Math.random() * 120, stage: 'sweep', p: 0 });
+    }
+    sceneLocal.carriers.forEach(c => {
+      if (c.stage === 'sweep') {
+        c.p += dt / 1000 * 0.8;
+        if (c.type === 'e') c.x = lerp(c.x, 560, 0.04); else c.x = lerp(c.x, 1040, 0.04);
+        if (c.p >= 1) { c.stage = 'done'; }
+      }
+    });
+    sceneLocal.carriers = sceneLocal.carriers.filter(c => c.p < 1.4);
+  },
+  draw(ctx, t) {
+    const top = 200, bot = 460, jx = 800;
+    // n region (left)
+    ctx.fillStyle = 'rgba(56, 116, 220, 0.16)';
+    ctx.fillRect(380, top, jx - 380, bot - top);
+    // p region (right)
+    ctx.fillStyle = 'rgba(255, 122, 107, 0.13)';
+    ctx.fillRect(jx, top, 420, bot - top);
+    // depletion band
+    const dg = ctx.createLinearGradient(jx - 60, 0, jx + 60, 0);
+    dg.addColorStop(0, 'rgba(255,209,102,0)');
+    dg.addColorStop(0.5, 'rgba(255,209,102,0.22)');
+    dg.addColorStop(1, 'rgba(255,209,102,0)');
+    ctx.fillStyle = dg; ctx.fillRect(jx - 60, top, 120, bot - top);
+    ctx.strokeStyle = 'rgba(255,209,102,0.6)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(jx, top); ctx.lineTo(jx, bot); ctx.stroke(); ctx.setLineDash([]);
+    // field arrows (n -> p inside band)
+    ctx.strokeStyle = 'rgba(255,209,102,0.7)'; ctx.fillStyle = 'rgba(255,209,102,0.7)'; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) {
+      const ay = top + 60 + i * 110;
+      ctx.beginPath(); ctx.moveTo(jx - 38, ay); ctx.lineTo(jx + 30, ay); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(jx + 30, ay); ctx.lineTo(jx + 22, ay - 5); ctx.lineTo(jx + 22, ay + 5); ctx.closePath(); ctx.fill();
+    }
+    // region labels
+    ctx.fillStyle = C_ELECTRON; ctx.font = '800 26px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('N-type', 500, top - 20);
+    ctx.fillStyle = C_HOLE; ctx.fillText('P-type', 1000, top - 20);
+    ctx.fillStyle = 'rgba(255,209,102,0.9)'; ctx.font = '700 15px system-ui';
+    ctx.fillText('built-in field', jx, bot + 26);
+    // carriers
+    sceneLocal.carriers.forEach(c => {
+      const col = c.type === 'e' ? C_ELECTRON : C_HOLE;
+      const glow = c.type === 'e' ? C_ELECTRON_GLOW : C_HOLE_GLOW;
+      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, 15);
+      g.addColorStop(0, glow + '0.55)'); g.addColorStop(1, glow + '0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(c.x, c.y, 6.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.font = '900 12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(c.type === 'e' ? '−' : '+', c.x, c.y);
+    });
+    // external circuit: from n-side top, out to a motor, back to p-side bottom
+    drawWire(ctx, [
+      { x: 420, y: top }, { x: 420, y: 120 }, { x: 800, y: 120 }
+    ], 1, C_WIRE);
+    drawMotor(ctx, 880, 120, 42, sceneLocal.motorAngle, 1);
+    drawWire(ctx, [
+      { x: 960, y: 120 }, { x: 1180, y: 120 }, { x: 1180, y: bot }, { x: 1180, y: bot }
+    ], 1, C_WIRE);
+    drawWire(ctx, [{ x: 1180, y: bot }, { x: 1180, y: bot + 20 }, { x: 420, y: bot + 20 }, { x: 420, y: bot }], 1, C_WIRE);
+    drawLabel(ctx, 700, 90, 720, 120, 'DC current out', '125, 211, 252', 'right');
+  }
+};
+
+// =====================================================
+//  SCENE 7 — One Cell's Output (V vs I)
+// =====================================================
+const PANEL7 = { x: 470, y: 400 };
+const scene7 = {
+  phase: "Step 7: One Cell's Output",
+  phaseColor: C_HOLE,
+  draggableSun: true,
+  isInteractive: true,
+  notes: "One silicon cell makes about <strong>0.5 to 0.6 volts</strong>. Here is the surprise: the <strong>voltage barely changes</strong> with brightness. What changes is the <strong>current</strong> (amps). More light frees more electrons every second, so <strong>more current flows</strong>. Brightness controls amps, not volts.",
+  notebook: "Drag the sun and watch both meters. Record: what happens to <strong>voltage</strong> as the light changes? What happens to <strong>current</strong>? Write the rule in your own words: <strong>light controls ____, not ____</strong>.",
+  setup() { clearField(); sun = { x: 470, y: 120 }; sceneLocal = { intensity: 0, motorAngle: 0 }; },
+  update(dt) {
+    sceneLocal.intensity = overheadIntensity(PANEL7.x, 150, 430, 240);
+    sceneLocal.motorAngle += sceneLocal.intensity * dt * 0.02;
+  },
+  readout() {
+    const v = (0.5 + sceneLocal.intensity * 0.08).toFixed(2);
+    const a = (sceneLocal.intensity * 2.0).toFixed(2);
+    return `Voltage: <strong>${v} V</strong> · Current: <strong>${a} A</strong>`;
+  },
+  draw(ctx, t) {
+    const I = sceneLocal.intensity;
+    drawBeam(ctx, sun.x, sun.y, PANEL7.x, PANEL7.y, 130, I);
+    drawPanel(ctx, PANEL7.x, PANEL7.y, 240, 150, 48, I, 4, 3);
+    drawSun(ctx, sun.x, sun.y, 38, I, true);
+    // meters on right
+    const v = 0.5 + I * 0.08;     // volts, nearly fixed
+    const a = I * 2.0;            // amps, scales with light
+    drawMeter(ctx, 820, 230, 360, 'Voltage', v / 0.7, v.toFixed(2) + ' V', C_HOLE, true);
+    drawMeter(ctx, 820, 360, 360, 'Current', a / 2.2, a.toFixed(2) + ' A', C_ELECTRON, false);
+    ctx.fillStyle = 'rgba(245,245,245,0.6)'; ctx.font = '600 14px system-ui'; ctx.textAlign = 'left';
+    ctx.fillText('Drag the sun. Watch which needle moves.', 820, 470);
+  }
+};
+
+// =====================================================
+//  SCENE 8 — Wiring: Series vs Parallel
+// =====================================================
+const scene8 = {
+  phase: 'Step 8: Wiring · Series vs Parallel',
+  phaseColor: C_ACCENT,
+  isInteractive: true,
+  controls: {
+    aLabel: 'Series ⇄ Parallel', aClass: 'alt',
+    bLabel: '',
+    onA() { sceneLocal.series = !sceneLocal.series; }
+  },
+  notes: "To power bigger jobs you wire many cells together. <strong>Series</strong> (end to end) <strong>adds the voltages</strong> but keeps the current the same. <strong>Parallel</strong> (side by side) keeps the <strong>voltage the same</strong> but <strong>adds the currents</strong>. Engineers choose the wiring to match the job.",
+  notebook: "Toggle between <strong>series</strong> and <strong>parallel</strong>. Make a two-column table. For each, record the <strong>voltage</strong> and the <strong>current</strong> of the three-cell array. Write when you would choose each one.",
+  setup() { clearField(); sceneLocal = { series: true, intensity: 1 }; },
+  update(dt) {},
+  readout() {
+    const cellV = 0.55, cellA = 2.0;
+    const v = sceneLocal.series ? cellV * 3 : cellV;
+    const a = sceneLocal.series ? cellA : cellA * 3;
+    const mode = sceneLocal.series ? 'Series' : 'Parallel';
+    return `${mode} · <strong>${v.toFixed(2)} V</strong> · <strong>${a.toFixed(1)} A</strong>`;
+  },
+  draw(ctx, t) {
+    const series = sceneLocal.series;
+    const cellY = 200, cw = 150, ch = 90;
+    const xs = [320, 540, 760];
+    // draw three cells
+    function cell(x, label) {
+      ctx.save();
+      const g = ctx.createLinearGradient(x, cellY, x, cellY + ch);
+      g.addColorStop(0, 'rgba(56,116,220,0.85)'); g.addColorStop(1, 'rgba(20,50,120,0.9)');
+      ctx.fillStyle = g; roundRect(ctx, x, cellY, cw, ch, 8); ctx.fill();
+      ctx.strokeStyle = '#9fb3d8'; ctx.lineWidth = 2; roundRect(ctx, x, cellY, cw, ch, 8); ctx.stroke();
+      // grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      for (let i = 1; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x + i * cw / 3, cellY); ctx.lineTo(x + i * cw / 3, cellY + ch); ctx.stroke(); }
+      ctx.fillStyle = '#fff'; ctx.font = '700 13px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('0.55 V', x + cw / 2, cellY + ch / 2 + 4);
+      // terminals
+      ctx.fillStyle = C_HOLE; ctx.font = '900 16px system-ui';
+      ctx.fillText('+', x + 12, cellY - 8);
+      ctx.fillStyle = C_ELECTRON; ctx.fillText('−', x + cw - 12, cellY - 8);
+      ctx.restore();
+    }
+    xs.forEach((x, i) => cell(x, i));
+    // wiring
+    if (series) {
+      // connect - of one to + of next
+      for (let i = 0; i < 2; i++) {
+        drawWire(ctx, [{ x: xs[i] + cw - 12, y: cellY - 8 }, { x: xs[i] + cw - 12, y: 150 }, { x: xs[i + 1] + 12, y: 150 }, { x: xs[i + 1] + 12, y: cellY - 8 }], 1, C_WIRE);
+      }
+      // out leads
+      drawWire(ctx, [{ x: xs[0] + 12, y: cellY - 8 }, { x: xs[0] + 12, y: 150 }, { x: 220, y: 150 }, { x: 220, y: 400 }, { x: 1000, y: 400 }], 1, C_WIRE);
+      drawWire(ctx, [{ x: xs[2] + cw - 12, y: cellY - 8 }, { x: xs[2] + cw - 12, y: 150 }, { x: 980, y: 150 }, { x: 980, y: 400 }], 1, C_WIRE);
+    } else {
+      // all + together (top rail), all - together (bottom rail)
+      const railTop = 150, railBot = cellY + ch + 40;
+      xs.forEach(x => {
+        drawWire(ctx, [{ x: x + 12, y: cellY - 8 }, { x: x + 12, y: railTop }], 1, C_WIRE);
+        drawWire(ctx, [{ x: x + cw - 12, y: cellY + ch }, { x: x + cw - 12, y: railBot }], 1, C_WIRE);
+      });
+      drawWire(ctx, [{ x: xs[0] + 12, y: railTop }, { x: xs[2] + 12, y: railTop }, { x: 980, y: railTop }, { x: 980, y: 400 }], 1, C_WIRE);
+      drawWire(ctx, [{ x: xs[0] + cw - 12, y: railBot }, { x: xs[2] + cw - 12, y: railBot }, { x: 220, y: railBot }, { x: 220, y: 400 }, { x: 1000, y: 400 }], 1, C_WIRE);
+    }
+    // load motor
+    drawMotor(ctx, 1000, 400, 50, t * 0.02, 1);
+    // meters
+    const v = series ? 1.65 : 0.55;
+    const a = series ? 2.0 : 6.0;
+    drawMeter(ctx, 1110, 250, 360, 'Array voltage', v / 1.8, v.toFixed(2) + ' V', C_HOLE, false);
+    drawMeter(ctx, 1110, 360, 360, 'Array current', a / 6.5, a.toFixed(1) + ' A', C_ELECTRON, false);
+    // mode banner
+    ctx.fillStyle = series ? C_HOLE : C_ELECTRON;
+    ctx.font = '800 28px system-ui'; ctx.textAlign = 'left';
+    ctx.fillText(series ? 'SERIES → adds VOLTS' : 'PARALLEL → adds AMPS', 320, 520);
+  }
+};
+
+// =====================================================
+//  SCENE 9 — The Challenge (drifting sun, aim + wire)
+// =====================================================
+const PANEL9 = { x: 360, y: 440 };
+const scene9 = {
+  phase: 'Step 9: The Engineer Challenge',
+  phaseColor: C_OK,
+  isInteractive: true,
+  controls: {
+    aLabel: 'Aim at Sun', aClass: 'alt',
+    bLabel: 'Series ⇄ Parallel',
+    onA() { sceneLocal.aimX = sceneLocal.sunX; },
+    onB() { sceneLocal.series = !sceneLocal.series; }
+  },
+  notes: "Now you are the engineer. The sun is <strong>moving</strong>, so you must keep the panel <strong>aimed</strong> to capture the most light. Three jobs need three different outputs. Job A needs <strong>high voltage</strong>. Job B needs <strong>high current</strong>. Job C needs steady <strong>power</strong>. Configure the array to complete all three.",
+  notebook: "For each job, record the <strong>wiring</strong> (series or parallel) and the <strong>sunlight level</strong> that completed it. Write one sentence on why <strong>aiming the panel</strong> changed your current.",
+  setup() {
+    clearField();
+    sceneLocal = {
+      sunX: 800, aimX: 800, series: true, motorAngle: 0,
+      jobs: [
+        { id: 'A', label: 'Lift water uphill', need: 'high voltage', done: false },
+        { id: 'B', label: 'Max flow rate', need: 'high current', done: false },
+        { id: 'C', label: 'Steady charge', need: 'steady power', done: false }
+      ],
+      allDoneT: 0
+    };
+  },
+  update(dt) {
+    // sun drifts across sky
+    sceneLocal.sunX = 800 + Math.sin(animT / 3200) * 520;
+    const I = clamp(1 - Math.abs(sceneLocal.aimX - sceneLocal.sunX) / 520, 0.04, 1);
+    sceneLocal.intensity = I;
+    sceneLocal.motorAngle += I * dt * 0.02;
+    const v = sceneLocal.series ? 1.65 : 0.55;
+    const a = (sceneLocal.series ? 2.0 : 6.0) * I;
+    const p = v * a;
+    const J = sceneLocal.jobs;
+    if (sceneLocal.series && v >= 1.0 && a >= 0.6) J[0].done = true;
+    if (!sceneLocal.series && a >= 3.5) J[1].done = true;
+    if (p >= 1.6) J[2].done = true;
+    if (J.every(j => j.done)) sceneLocal.allDoneT += dt;
+  },
+  readout() {
+    const I = sceneLocal.intensity || 0;
+    const v = sceneLocal.series ? 1.65 : 0.55;
+    const a = (sceneLocal.series ? 2.0 : 6.0) * I;
+    return `Sun: <strong>${Math.round(I * 100)}%</strong> · <strong>${v.toFixed(2)} V</strong> · <strong>${a.toFixed(1)} A</strong>`;
+  },
+  draw(ctx, t) {
+    const I = sceneLocal.intensity;
+    const sunY = 120;
+    // panel tilt visual from aim offset
+    const skew = clamp((sceneLocal.aimX - PANEL9.x) / 8, -90, 90);
+    drawBeam(ctx, sceneLocal.sunX, sunY, PANEL9.x, PANEL9.y, 130, I);
+    const p = drawPanel(ctx, PANEL9.x, PANEL9.y, 250, 150, skew, I);
+    drawWire(ctx, [{ x: p.br.x, y: p.br.y }, { x: 620, y: 480 }, { x: 760, y: 480 }, { x: 760, y: 430 }], I, C_WIRE);
+    drawMotor(ctx, 760, 380, 50, sceneLocal.motorAngle, I);
+    // drifting sun (not grabbable; aim it instead)
+    drawSun(ctx, sceneLocal.sunX, sunY, 38, I, false);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '600 13px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('press Aim at Sun to track it', sceneLocal.sunX, sunY + 60);
+    // aim alignment hint line
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,209,102,${0.15 + I * 0.4})`; ctx.lineWidth = 2; ctx.setLineDash([5, 6]);
+    ctx.beginPath(); ctx.moveTo(sceneLocal.aimX, sunY + 40); ctx.lineTo(PANEL9.x, PANEL9.y - 70); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+    // job cards
+    const jx = 960, jy = 160, jw = 460, jh = 92;
+    sceneLocal.jobs.forEach((job, i) => {
+      const y = jy + i * (jh + 16);
+      ctx.save();
+      const g = ctx.createLinearGradient(jx, y, jx, y + jh);
+      if (job.done) { g.addColorStop(0, 'rgba(74,222,128,0.22)'); g.addColorStop(1, 'rgba(34,120,70,0.18)'); }
+      else { g.addColorStop(0, 'rgba(40,46,66,0.9)'); g.addColorStop(1, 'rgba(20,24,38,0.9)'); }
+      ctx.fillStyle = g; roundRect(ctx, jx, y, jw, jh, 12); ctx.fill();
+      ctx.strokeStyle = job.done ? 'rgba(74,222,128,0.7)' : 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5;
+      roundRect(ctx, jx, y, jw, jh, 12); ctx.stroke();
+      // status dot
+      ctx.fillStyle = job.done ? C_OK : 'rgba(255,255,255,0.15)';
+      ctx.beginPath(); ctx.arc(jx + 34, y + jh / 2, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = job.done ? '#0a2a14' : 'rgba(255,255,255,0.5)';
+      ctx.font = '900 20px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(job.done ? '✓' : job.id, jx + 34, y + jh / 2 + 1);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(245,245,245,0.95)'; ctx.font = '700 18px system-ui';
+      ctx.fillText('Job ' + job.id + ': ' + job.label, jx + 66, y + 34);
+      ctx.fillStyle = job.done ? C_OK : 'rgba(160,160,160,0.9)'; ctx.font = '600 14px system-ui';
+      ctx.fillText('needs ' + job.need, jx + 66, y + 62);
+      ctx.restore();
+    });
+    if (sceneLocal.allDoneT > 0) {
+      ctx.save();
+      ctx.fillStyle = `rgba(74,222,128,${clamp(sceneLocal.allDoneT / 600, 0, 1)})`;
+      ctx.font = '800 26px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('All jobs complete. You optimized the array.', 760, 580);
+      ctx.restore();
+    }
+  }
+};
+
+// =====================================================
+//  SCENE 10 — Summary + Real Lab
+// =====================================================
+const scene10 = {
+  phase: 'Step 10: Build It For Real',
+  phaseColor: C_SUN,
+  notes: "Here is the whole story. <strong>Photons</strong> hit silicon and free <strong>electrons</strong> (the photoelectric effect). The <strong>p-n junction</strong> pushes them one way as <strong>DC current</strong>. <strong>Voltage</strong> is set by the silicon; <strong>current</strong> grows with light. Wire cells in <strong>series</strong> for volts or <strong>parallel</strong> for amps to match the job.",
+  notebook: "Write a four line summary: (1) how one cell works, (2) what sets voltage vs current, (3) series vs parallel, (4) your data from the challenge. Then <strong>get copper foil, salt water, and a multimeter from Eric</strong> and build a real photocell. Measure its voltage in sun and in shade.",
+  setup() { clearField(); sceneLocal = { photons: [] }; },
+  update(dt) {
+    if (Math.random() < 0.3) sceneLocal.photons.push({ x: 120, y: 120 + Math.random() * 60, p: 0 });
+    sceneLocal.photons.forEach(ph => ph.p += dt / 1000 * 0.5);
+    sceneLocal.photons = sceneLocal.photons.filter(ph => ph.p < 1);
+  },
+  draw(ctx, t) {
+    // top: recap flow chain
+    const steps = [
+      { t: 'Photon', c: '255, 209, 102' },
+      { t: 'Free electron', c: '92, 201, 255' },
+      { t: 'Junction push', c: '74, 222, 128' },
+      { t: 'DC current', c: '125, 211, 252' },
+      { t: 'Work', c: '99, 102, 241' }
+    ];
+    const y = 130, x0 = 160, gap = 270;
+    steps.forEach((s, i) => {
+      const x = x0 + i * gap;
+      ctx.save();
+      const g = ctx.createLinearGradient(x - 80, y - 26, x + 80, y + 26);
+      g.addColorStop(0, `rgba(${s.c},0.9)`); g.addColorStop(1, `rgba(${s.c},0.45)`);
+      ctx.fillStyle = g; ctx.shadowColor = `rgba(${s.c},0.4)`; ctx.shadowBlur = 18;
+      roundRect(ctx, x - 90, y - 26, 180, 52, 14); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0a0a0a'; ctx.font = '700 16px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(s.t, x, y + 1);
+      ctx.restore();
+      if (i < steps.length - 1) {
+        const ax = x + 90, bx = x + gap - 90;
+        const grd = ctx.createLinearGradient(ax, y, bx, y);
+        grd.addColorStop(0, `rgba(${s.c},0.8)`); grd.addColorStop(1, `rgba(${steps[i + 1].c},0.8)`);
+        ctx.strokeStyle = grd; ctx.lineWidth = 3; ctx.beginPath();
+        ctx.moveTo(ax, y); ctx.lineTo(bx - 8, y); ctx.stroke();
+        ctx.fillStyle = `rgba(${steps[i + 1].c},0.8)`;
+        ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx - 10, y - 6); ctx.lineTo(bx - 10, y + 6); ctx.closePath(); ctx.fill();
+      }
+    });
+    // bottom: real lab call-to-action with copper/saltwater sketch
+    const bx = 120, by = 250, bw = W - 240, bh = 340;
+    ctx.save();
+    const g = ctx.createLinearGradient(bx, by, bx, by + bh);
+    g.addColorStop(0, 'rgba(255,209,102,0.10)'); g.addColorStop(1, 'rgba(255,183,3,0.04)');
+    ctx.fillStyle = g; roundRect(ctx, bx, by, bw, bh, 18); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,209,102,0.4)'; ctx.lineWidth = 2; roundRect(ctx, bx, by, bw, bh, 18); ctx.stroke();
+    ctx.restore();
+    // beaker sketch (left)
+    const cx = 360, cyTop = 330, cyBot = 540, cwid = 200;
+    ctx.save();
+    // photons hitting beaker
+    sceneLocal.photons.forEach(ph => {
+      const x = lerp(120, cx - 40, smooth(ph.p));
+      const yy = lerp(ph.y, 380, smooth(ph.p));
+      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(x, yy, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    });
+    // glass
+    ctx.strokeStyle = 'rgba(200,220,230,0.7)'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(cx - cwid / 2, cyTop); ctx.lineTo(cx - cwid / 2, cyBot);
+    ctx.quadraticCurveTo(cx - cwid / 2, cyBot + 18, cx - cwid / 2 + 18, cyBot + 18);
+    ctx.lineTo(cx + cwid / 2 - 18, cyBot + 18);
+    ctx.quadraticCurveTo(cx + cwid / 2, cyBot + 18, cx + cwid / 2, cyBot);
+    ctx.lineTo(cx + cwid / 2, cyTop); ctx.stroke();
+    // salt water
+    const sw = ctx.createLinearGradient(0, 400, 0, cyBot);
+    sw.addColorStop(0, 'rgba(94,234,212,0.5)'); sw.addColorStop(1, 'rgba(45,150,160,0.6)');
+    ctx.fillStyle = sw;
+    roundRect(ctx, cx - cwid / 2 + 4, 400, cwid - 8, cyBot - 400 + 14, 6); ctx.fill();
+    // two copper plates
+    ctx.fillStyle = '#c87f4a'; ctx.fillRect(cx - 46, 360, 14, 150);
+    ctx.fillStyle = '#7a4a2a'; ctx.fillRect(cx + 32, 360, 14, 150); // flamed cuprous oxide plate
+    ctx.fillStyle = 'rgba(245,245,245,0.7)'; ctx.font = '600 12px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('copper', cx - 39, 350); ctx.fillText('CuO plate', cx + 39, 350);
+    ctx.fillText('salt water', cx, cyBot - 14);
+    // multimeter
+    drawWire(ctx, [{ x: cx - 39, y: 360 }, { x: cx - 39, y: 300 }, { x: 560, y: 300 }, { x: 560, y: 360 }], 0, C_WIRE);
+    drawWire(ctx, [{ x: cx + 39, y: 360 }, { x: cx + 39, y: 320 }, { x: 660, y: 320 }, { x: 660, y: 360 }], 0, C_WIRE);
+    ctx.fillStyle = '#1b1f2a'; roundRect(ctx, 540, 360, 160, 110, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; roundRect(ctx, 540, 360, 160, 110, 10); ctx.stroke();
+    ctx.fillStyle = '#0a2a14'; roundRect(ctx, 556, 376, 128, 50, 6); ctx.fill();
+    ctx.fillStyle = C_OK; ctx.font = '800 26px ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText((0.30 + 0.25 * (0.5 + 0.5 * Math.sin(t / 700))).toFixed(2) + ' V', 620, 401);
+    ctx.fillStyle = 'rgba(245,245,245,0.6)'; ctx.font = '600 12px system-ui';
+    ctx.fillText('multimeter', 620, 458);
+    ctx.restore();
+    // CTA text (right)
+    ctx.save();
+    ctx.textAlign = 'left';
+    ctx.fillStyle = C_SUN; ctx.font = '800 30px system-ui';
+    ctx.fillText('Now build it for real.', 820, 330);
+    ctx.fillStyle = 'rgba(245,245,245,0.92)'; ctx.font = '500 19px system-ui';
+    const lines = [
+      'Get copper foil, salt water, and a',
+      'multimeter from Eric.',
+      '',
+      'Build your own photocell and measure',
+      'its voltage in sun and in shade.',
+      '',
+      'Same physics. Real data. Your hands.'
+    ];
+    lines.forEach((ln, i) => ctx.fillText(ln, 820, 376 + i * 30));
+    ctx.restore();
+  }
+};
+
+// =====================================================
+//  Scenes list
+// =====================================================
+const scenes = [scene1, scene2, scene3, scene4, scene5, scene6, scene7, scene8, scene9, scene10];
+
+// =====================================================
+//  UI
+// =====================================================
+const phaseNameEl = document.getElementById("phaseName");
+const notesEl = document.getElementById("notes");
+const stepHeadingEl = document.getElementById("stepHeading");
+const notebookTextEl = document.getElementById("notebookText");
+const stepIndicator = document.getElementById("stepIndicator");
+const prevBtn = document.getElementById("prevBtn");
+const nextBtn = document.getElementById("nextBtn");
+const resetBtn = document.getElementById("resetBtn");
+const simControlsEl = document.getElementById("simControls");
+const ctrlA = document.getElementById("ctrlA");
+const ctrlB = document.getElementById("ctrlB");
+const simReadout = document.getElementById("simReadout");
+
+function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+
+function setScene(i) {
+  currentSceneIdx = i;
+  animT = 0;
+  sceneFadeT = 0;
+  const s = scenes[i];
+  if (s.setup) s.setup();
+  phaseNameEl.textContent = s.phase;
+  phaseNameEl.style.color = s.phaseColor;
+  notesEl.innerHTML = s.notes;
+  stepHeadingEl.textContent = s.phase;
+  notebookTextEl.innerHTML = s.notebook;
+  stepIndicator.textContent = `${pad2(i + 1)} / ${pad2(scenes.length)}`;
+  prevBtn.disabled = i === 0;
+  nextBtn.disabled = i === scenes.length - 1;
+  nextBtn.textContent = i === scenes.length - 1 ? 'Done' : 'Next →';
+  // controls
+  if (s.isInteractive) {
+    simControlsEl.classList.add('visible');
+    const c = s.controls;
+    if (c && c.aLabel) { ctrlA.textContent = c.aLabel; ctrlA.classList.remove('hidden'); ctrlA.className = 'sim-btn ' + (c.aClass || '') ; }
+    else ctrlA.classList.add('hidden');
+    if (c && c.bLabel) { ctrlB.textContent = c.bLabel; ctrlB.classList.remove('hidden'); ctrlB.className = 'sim-btn ' + (c.bClass || ''); }
+    else ctrlB.classList.add('hidden');
+  } else {
+    simControlsEl.classList.remove('visible');
+  }
+  updateReadout();
+}
+
+function updateReadout() {
+  const s = scenes[currentSceneIdx];
+  simReadout.innerHTML = (s.isInteractive && s.readout) ? s.readout() : '';
+}
+
+prevBtn.addEventListener("click", () => { if (currentSceneIdx > 0) setScene(currentSceneIdx - 1); });
+nextBtn.addEventListener("click", () => { if (currentSceneIdx < scenes.length - 1) setScene(currentSceneIdx + 1); });
+resetBtn.addEventListener("click", () => setScene(currentSceneIdx));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight" && currentSceneIdx < scenes.length - 1) setScene(currentSceneIdx + 1);
+  if (e.key === "ArrowLeft" && currentSceneIdx > 0) setScene(currentSceneIdx - 1);
+});
+ctrlA.addEventListener("click", () => { const c = scenes[currentSceneIdx].controls; if (c && c.onA) { c.onA(); updateReadout(); } });
+ctrlB.addEventListener("click", () => { const c = scenes[currentSceneIdx].controls; if (c && c.onB) { c.onB(); updateReadout(); } });
+
+// =====================================================
+//  Draggable sun (pointer + touch)
+// =====================================================
+function canvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: (e.clientX - rect.left) * (W / rect.width), y: (e.clientY - rect.top) * (H / rect.height) };
+}
+canvas.addEventListener("pointerdown", (e) => {
+  const s = scenes[currentSceneIdx];
+  if (!s.draggableSun) return;
+  const p = canvasPos(e);
+  if (Math.hypot(p.x - sun.x, p.y - sun.y) < 70) { dragging = true; canvas.setPointerCapture(e.pointerId); }
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!dragging) return;
+  const p = canvasPos(e);
+  sun.x = clamp(p.x, 80, W - 80);
+  sun.y = clamp(p.y, 50, 340);
+});
+canvas.addEventListener("pointerup", () => { dragging = false; });
+canvas.addEventListener("pointercancel", () => { dragging = false; });
+canvas.addEventListener("pointermove", (e) => {
+  const s = scenes[currentSceneIdx];
+  if (s.draggableSun && !dragging) {
+    const p = canvasPos(e);
+    canvas.style.cursor = Math.hypot(p.x - sun.x, p.y - sun.y) < 70 ? 'grab' : 'default';
+  } else if (dragging) { canvas.style.cursor = 'grabbing'; }
+  else { canvas.style.cursor = 'default'; }
+});
+
+// =====================================================
+//  Main loop
+// =====================================================
+let lastTs = null;
+function tick(ts) {
+  if (lastTs == null) lastTs = ts;
+  const dt = Math.min(50, ts - lastTs);
+  lastTs = ts;
+  animT += dt;
+  sceneFadeT = Math.min(1, sceneFadeT + dt / 600);
+  const s = scenes[currentSceneIdx];
+  if (s.update) s.update(dt);
+  ctx.save();
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.globalAlpha = sceneFadeT;
+  s.draw(ctx, animT);
+  ctx.restore();
+  if (s.isInteractive && s.readout) updateReadout();
+  requestAnimationFrame(tick);
+}
+
+setScene(0);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
