@@ -221,7 +221,8 @@ function bandName(nm) {
 const panelVolts = b => b <= 0 ? 0 : Math.max(0, 10 * (0.6 + 0.026 * Math.log(b / 100)));
 const panelAmps = b => 0.5 * b / 100;
 
-// Design lab: where 1000 W of sunlight goes inside one cell (simplified teaching model)
+// Design lab: where 1000 W of sunlight goes inside one cell (simplified teaching model,
+// calibrated for comparison rather than prediction of a commercial panel)
 const SURFACES = [
   { id: 'none', name: 'No coating', reflect: 0.30 },
   { id: 'coat', name: 'Coating', reflect: 0.10 },
@@ -650,11 +651,11 @@ scenes.push({
   }
 });
 
-// ---- Light frees an electron (the photoelectric effect) ----
+// ---- Light creates a mobile electron-hole pair (the photovoltaic effect begins) ----
 scenes.push({
   heading: 'Light Frees an Electron',
   seeLabel: 'Fire photons at silicon',
-  notes: "<strong>A photon can knock one electron loose from silicon, but only if it carries at least 1.1 eV of energy.</strong> Silicon's outer electrons are locked in bonds between atoms. A freed electron can move, and it leaves behind a <strong>hole</strong>. Brighter light means more photons, not stronger ones. This is the <strong>photoelectric effect</strong>. In a solar cell the electron stays inside the silicon.",
+  notes: "<strong>A photon can excite an electron in silicon, but only if it carries at least 1.1 eV of energy.</strong> The electron crosses silicon's band gap and becomes mobile, leaving behind a mobile <strong>hole</strong>. Brighter light means more photons, not more energy in each photon. This light-driven creation of electron-hole pairs begins the <strong>photovoltaic effect</strong>. The electron remains inside the cell unless the circuit gives it a path to travel.",
   notebook: "<strong>Predict first:</strong> will ten weak infrared photons free an electron when one can't? Write yes or no and why. Then test it. <strong>Record</strong> the wavelength, the energy, and freed or not freed for three photons you fire. Use <strong>E = 1240 ÷ wavelength</strong>.",
   build(stage) {
     const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false });
@@ -989,7 +990,7 @@ scenes.push({
 scenes.push({
   heading: 'Where the Layers Meet',
   seeLabel: 'Drag the n-type slab to touch the p-type slab',
-  notes: "<strong>When n-type and p-type touch, a one-way push forms at the junction.</strong> Free electrons near the border cross over and fill holes. That leaves fixed charges behind: plus on the n side, minus on the p side. Those charges make an <strong>electric field</strong> that works like a hill. Electrons roll down to the n side. Holes float up to the p side.",
+  notes: "<strong>When n-type and p-type touch, an electric field forms at the junction.</strong> Free electrons near the border diffuse across and fill holes. That leaves fixed ions behind: positive on the n side and negative on the p side. The field points from n to p, but a negative electron feels a force in the opposite direction, toward the n side. A positive hole is pushed toward the p side.",
   notebook: "<strong>Predict first:</strong> when the slabs touch, which way will the free electrons move? Then join them. <strong>Draw</strong> the junction with its plus and minus charges, and add an arrow showing which way the field pushes a free electron.",
   build(stage) {
     const st = sceneState('junction', { joined: false, hill: false });
@@ -1372,7 +1373,7 @@ function buildLab(stage, mode) {
 scenes.push({
   heading: 'Design a Fair Test',
   seeLabel: 'Test one variable inside the cell',
-  notes: "<strong>Engineers improve cells by changing what is inside them.</strong> You can change three things: the surface coating, how far apart the metal fingers are, and how thick the silicon is. A <strong>fair test</strong> changes only one variable and keeps the others the same. <strong>Efficiency</strong> is the percent of sunlight energy that comes out as electricity.",
+  notes: "<strong>Engineers improve cells by changing what is inside them.</strong> You can change three things: the surface coating, how far apart the metal fingers are, and how thick the silicon is. A <strong>fair test</strong> changes only one variable and keeps the others the same. <strong>Efficiency</strong> is the percent of sunlight energy that comes out as electricity. The values here come from a simplified comparison model, not measurements of a commercial panel.",
   notebook: "Pick <strong>one</strong> variable. <strong>Write</strong> your question and your hypothesis first. <strong>Make a table</strong>: trial, setting, efficiency. Run at least three trials that change only that variable. Then <strong>explain</strong> your result in one sentence using what you learned in Steps 2 to 7.",
   build(stage) { buildLab(stage, 'fair'); }
 });
@@ -1521,27 +1522,12 @@ scenes.push({
   notebook: "Write the questions you still have in your notebook, then add them here.",
   build(stage) {
     const APP = 'How Solar Panels Work';
-    const TEACHER_CODE = 'sparky2026';
     const input = el('input', { type: 'text', class: 'pq-input', style: 'font-family:var(--font-sans);font-size:16px;max-width:none;flex:1;min-width:0', placeholder: 'What question do you still have?', autocomplete: 'off', 'aria-label': 'Your question' });
     const btn = el('button', { class: 'primary' }, 'Add question');
     const msg = el('p', { class: 'status-line', style: 'text-align:left;min-height:0', role: 'status', 'aria-live': 'polite' });
     const feed = el('div', { style: 'margin-top:8px;border:1px solid var(--borderColor);border-radius:10px;background:#fff' });
     const note = el('p', { class: 'caption', style: 'text-align:left' }, 'Saved on this device.');
     stage.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [input, btn]), msg, feed, note);
-    if (TEACHER) {
-      const tCode = el('input', { type: 'password', class: 'pq-input', style: 'font-size:14px;max-width:200px;min-height:44px', placeholder: 'Teacher passcode', 'aria-label': 'Teacher passcode' });
-      const clearBtn = el('button', { style: 'color:var(--accentRed)' }, 'Clear all questions (teacher)');
-      const tMsg = el('p', { class: 'status-line', style: 'text-align:left;min-height:0;font-size:13px' });
-      let armed = false;
-      clearBtn.addEventListener('click', async () => {
-        if (tCode.value !== TEACHER_CODE) { tMsg.textContent = 'Wrong passcode.'; armed = false; return; }
-        if (!armed) { armed = true; tMsg.textContent = ''; clearBtn.textContent = 'Click again to clear ALL questions'; return; }
-        clearBtn.disabled = true;
-        try { await window.ClassQ.clear(APP); tMsg.textContent = 'Cleared.'; } catch (e) { tMsg.textContent = 'Could not clear. Try again.'; }
-        armed = false; clearBtn.disabled = false; clearBtn.textContent = 'Clear all questions (teacher)';
-      });
-      stage.append(el('div', { style: 'display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap' }, [tCode, clearBtn]), tMsg);
-    }
     function paint(items) {
       feed.innerHTML = '';
       const qlist = []; (items || []).forEach(it => (it.questions || []).forEach(q => { if (q) qlist.push(q); }));
@@ -1601,7 +1587,7 @@ function updateGate() {
   const g = gateFor(), left = [...requiredTasks].filter(([id]) => !g.tasks[id]);
   g.complete = g.notebook && left.length === 0;
   notebookDone.checked = g.notebook;
-  nextBtn.disabled = current === scenes.length - 1 || !canAdvance();
+  nextBtn.disabled = !canAdvance();
   gateStatus.classList.toggle('complete', g.complete && !TEACHER);
   gateStatus.textContent = !storageOK ? 'Storage unavailable. Keep your answers in your notebook.'
     : TEACHER ? 'Teacher mode: every step is unlocked. Use the menu above to jump around. Add ?teacher=0 to the link to leave.'
@@ -1631,7 +1617,8 @@ function setScene(i, opts = {}) {
   stepIndicator.textContent = `${pad2(i + 1)} / ${pad2(scenes.length)}`;
   progressFill.style.width = ((i + 1) / scenes.length * 100) + '%';
   prevBtn.disabled = i === 0;
-  nextBtn.innerHTML = i === scenes.length - 1 ? 'Done' : 'Next ' + ICON.right;
+  nextBtn.hidden = i === scenes.length - 1;
+  nextBtn.innerHTML = 'Next ' + ICON.right;
   if (TEACHER) stepJump.value = String(i);
   s.build(stageEl);
   updateGate(); persistWork();
@@ -1690,7 +1677,6 @@ async function init() {
         mode: 'live',
         async submit(p) { await fs.addDoc(fs.collection(db, 'questions'), { app: p.app, questions: p.questions || [], created: Date.now() }); },
         subscribe(a, cb) { const qy = fs.query(fs.collection(db, 'questions'), fs.where('app', '==', a), fs.limit(400)); return fs.onSnapshot(qy, snap => { const list = []; snap.forEach(d => list.push(d.data())); list.sort((x, y) => (y.created || 0) - (x.created || 0)); cb(list); }, () => cb([])); },
-        async clear(a) { const snap = await fs.getDocs(fs.query(fs.collection(db, 'questions'), fs.where('app', '==', a))); for (const dd of snap.docs) await fs.deleteDoc(dd.ref); }
       };
     } catch (e) { setLocal(); }
   }

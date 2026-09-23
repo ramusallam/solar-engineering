@@ -47,4 +47,7 @@ assert.ok(Math.abs(1240 / 620 - A.PRACTICE[1].answer) < 1e-9);
 // no emoji or dashes that break the house style in authored copy
 assert.ok(!/[–—]/.test(html), 'no en or em dashes');
 assert.ok(!/[\u{1F300}-\u{1FAFF}✅✔]/u.test(html), 'no emoji or check glyphs');
+assert.ok(!html.includes('TEACHER_CODE'), 'no client-side teacher passcode');
+assert.ok(!html.includes('photoelectric effect'), 'use photovoltaic effect for the silicon cell process');
+assert.ok(html.includes('simplified comparison model'), 'label simulated efficiencies as a comparison model');
 console.log('model.cjs: all checks passed');
