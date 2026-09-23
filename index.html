@@ -217,8 +217,9 @@ function bandName(nm) {
   if (nm < 450) return 'violet'; if (nm < 495) return 'blue'; if (nm < 570) return 'green';
   if (nm < 590) return 'yellow'; if (nm < 620) return 'orange'; return 'red';
 }
-// Step 1 recap panel: 10 cells in series under a lamp (b = 0..100 %)
-const panelVolts = b => b <= 0 ? 0 : Math.max(0, 10 * (0.6 + 0.026 * Math.log(b / 100)));
+// Step 1 recap: one simplified silicon cell under a lamp (b = 0..100 %).
+// Illumination changes current; the cell chemistry sets the modeled voltage.
+const panelVolts = b => b <= 0 ? 0 : 0.5;
 const panelAmps = b => 0.5 * b / 100;
 
 // Design lab: where 1000 W of sunlight goes inside one cell (simplified teaching model,
@@ -465,15 +466,15 @@ const scenes = [];
 // ---- What you already know ----
 scenes.push({
   heading: 'What You Already Know',
-  seeLabel: 'A sealed panel, a meter, and a fan',
-  notes: "<strong>You already know that a solar panel turns light into electricity.</strong> <strong>Voltage</strong> is the push on the charges, measured in volts. <strong>Current</strong> is how much charge flows each second, measured in amps. More light means more current, so the fan spins faster. What you don't know yet is what happens inside the panel. Let's go inside.",
-  notebook: "<strong>Record</strong> the volts and amps at 0%, 50%, and 100% light. Then <strong>predict</strong>: sketch what you think is inside the panel that turns light into a push on charges. Label your guess.",
+  seeLabel: 'A sealed solar cell, a meter, and a fan',
+  notes: "<strong>A silicon solar cell produces about 0.5 V when it is illuminated.</strong> That voltage comes mainly from the cell's chemistry and junction. Brighter light adds more photons, so it produces more <strong>current</strong>, not more voltage. More current makes the fan spin faster. Now let's find out what is happening inside the cell.",
+  notebook: "<strong>Record</strong> the volts and amps at 0%, 50%, and 100% light. Then <strong>predict</strong>: sketch what you think is inside the cell that turns light into a push on charges. Label your guess.",
   build(stage) {
     const st = sceneState('light', { b: 50, dark: false, full: false });
     requireTask('dark', 'Turn the light down to 0%');
     requireTask('full', 'Turn the light up to 100%');
     setTask('dark', st.dark); setTask('full', st.full);
-    const { ctx } = makeCanvas(stage, 860, 320, 'A lamp shines on a sealed solar panel wired through a meter to a fan');
+    const { ctx } = makeCanvas(stage, 860, 320, 'A lamp shines on a sealed solar cell wired through a meter to a fan');
     const range = el('input', { type: 'range', min: 0, max: 100, step: 5, value: st.b, 'aria-label': 'Light brightness in percent' });
     const val = el('span', { class: 'val' });
     const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
@@ -506,7 +507,7 @@ scenes.push({
       for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(80 + i * 39.6, 176); ctx.lineTo(80 + i * 39.6, 238); ctx.stroke(); }
       ctx.fillStyle = '#fff'; ctx.font = '700 34px Roboto Serif, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 199, 208);
       ctx.restore();
-      drawPill(ctx, 'solar panel (sealed)', 199, 268, C.muted, 12);
+      drawPill(ctx, 'solar cell (sealed)', 199, 268, C.muted, 12);
       // wires (loop) with charges riding them
       strokePoly(ctx, top, '#dc2626'); strokePoly(ctx, top2, '#dc2626');
       strokePoly(ctx, loopPts.slice(3), '#44403c');
@@ -655,8 +656,8 @@ scenes.push({
 scenes.push({
   heading: 'Light Frees an Electron',
   seeLabel: 'Fire photons at silicon',
-  notes: "<strong>A photon can excite an electron in silicon, but only if it carries at least 1.1 eV of energy.</strong> The electron crosses silicon's band gap and becomes mobile, leaving behind a mobile <strong>hole</strong>. Brighter light means more photons, not more energy in each photon. This light-driven creation of electron-hole pairs begins the <strong>photovoltaic effect</strong>. The electron remains inside the cell unless the circuit gives it a path to travel.",
-  notebook: "<strong>Predict first:</strong> will ten weak infrared photons free an electron when one can't? Write yes or no and why. Then test it. <strong>Record</strong> the wavelength, the energy, and freed or not freed for three photons you fire. Use <strong>E = 1240 ÷ wavelength</strong>.",
+  notes: "<strong>Wavelength tells you how much energy one photon carries.</strong> Shorter wavelengths have more energy. In silicon, a photon needs at least 1.1 eV to excite an electron across the band gap and create an electron-hole pair. The calculation <strong>E = 1240 ÷ wavelength</strong> connects nanometers to electron volts. Use it to read the visual, not as a formula to memorize.",
+  notebook: "<strong>Predict first:</strong> will ten low-energy infrared photons excite an electron when one can't? Write yes or no and why. Test three wavelengths and <strong>record</strong> the nanometers, color or infrared band, and whether an electron was excited. Calculate the energy for <strong>one</strong> of your trials.",
   build(stage) {
     const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false });
     requireTask('free', 'Free an electron with one photon');
@@ -691,7 +692,7 @@ scenes.push({
     function update() {
       const E = photonEV(st.nm);
       val.textContent = st.nm + ' nm, ' + bandName(st.nm);
-      formula.innerHTML = `E = 1240 ÷ ${st.nm} = <span class="mono">${E.toFixed(2)} eV</span>` + (E >= BAND_GAP ? ' (enough to free an electron)' : ' (less than 1.1 eV)');
+      formula.innerHTML = `Shorter wavelength = more energy. <span class="mono">1240 ÷ ${st.nm} nm = ${E.toFixed(2)} eV</span>` + (E >= BAND_GAP ? ' (enough to excite an electron)' : ' (below the 1.1 eV threshold)');
       persistWork();
     }
     range.addEventListener('input', () => { st.nm = +range.value; update(); });

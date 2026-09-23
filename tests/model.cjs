@@ -12,9 +12,10 @@ const A = ctx.api;
 // photon threshold
 assert.ok(A.frees(550) && A.frees(1120) && !A.frees(1130) && !A.frees(1300));
 assert.equal(A.photonEV(620).toFixed(2), '2.00');
-// recap panel: dark = nothing, bright = more amps
+// recap cell: dark = nothing; illumination fixes voltage at 0.5 V and changes amps
 assert.equal(A.panelVolts(0), 0); assert.equal(A.panelAmps(0), 0);
-assert.ok(A.panelAmps(100) > A.panelAmps(50) && A.panelVolts(100) > A.panelVolts(10));
+assert.ok(A.panelAmps(100) > A.panelAmps(50));
+assert.equal(A.panelVolts(5), 0.5); assert.equal(A.panelVolts(50), 0.5); assert.equal(A.panelVolts(100), 0.5);
 // the design lab: exactly one design meets the 20% target, and each variable has an interior best
 const designs = [];
 A.SURFACES.forEach(s => A.SPACINGS.forEach(sp => A.THICKNESSES.forEach(t => designs.push({ surface: s.id, spacing: sp, thick: t, eff: A.cellModel({ surface: s.id, spacing: sp, thick: t }).eff }))));
