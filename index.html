@@ -4,1451 +4,1699 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>How Solar Panels Work</title>
+<meta name="description" content="An inquiry simulation that goes inside a solar cell: photons freeing electrons, holes, doping, the p-n junction, and experiments on what makes a cell efficient." />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Roboto+Mono:wght@400;700&family=Roboto+Serif:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg-0: #0a0a0a;
-    --bg-1: #141414;
-    --ink-hi: #f5f5f5;
-    --ink-mid: #a0a0a0;
-    --ink-low: #6b7280;
-    --sun: #ffd166;
-    --electron: #5cc9ff;
-    --hole: #ff7a6b;
-    --water: #5eead4;
-    --ok: #4ade80;
-    --accent: #6366f1;
-    --panel: #141414;
-    --panel-border: rgba(255,255,255,0.10);
+    /* Spark Learning companion tokens */
+    --bgMain: #F7F3EE;
+    --bgCard: #FFFFFF;
+    --accentBlue: #6366f1;
+    --accentBlueHover: #4f46e5;
+    --accentPurple: #a855f7;
+    --accentGreen: #10b981;
+    --accentRed: #ef4444;
+    --textPrimary: #1C1917;
+    --textSecondary: #57534E;
+    --textWarm: #2A2520;
+    --textWarmMuted: #A0937B;
+    --borderColor: #E8E0D2;
+    --borderSubtle: #F0EBE3;
+    --shadow-sm: 0 1px 2px rgba(17,17,17,0.04), 0 1px 3px rgba(17,17,17,0.06);
+    --shadow-md: 0 4px 12px rgba(17,17,17,0.06), 0 2px 4px rgba(17,17,17,0.04);
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-serif: 'Roboto Serif', Georgia, Cambria, serif;
+    --font-mono: 'Roboto Mono', monospace;
     --note-bg: #fdf1c6;
     --note-ink: #2a1e08;
+    --note-head: #7a3a00;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
-    background: var(--bg-0);
-    color: var(--ink-hi);
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-  header {
-    padding: 14px 32px;
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-  header .title {
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--ink-low);
-  }
-  .step-indicator {
-    font-size: 13px;
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-low);
-    letter-spacing: 1px;
-  }
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 32px 20px;
-  }
-  .stage {
-    position: relative;
-    background: var(--panel);
-    border: 1px solid var(--panel-border);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow:
-      0 30px 80px rgba(0,0,0,0.5),
-      inset 0 1px 0 rgba(255,255,255,0.04);
-  }
-  canvas { display: block; width: 100%; height: auto; }
-  .phase-bar {
-    padding: 16px 28px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 24px;
-    align-items: center;
-    border-top: 1px solid var(--panel-border);
-    background: rgba(5, 8, 20, 0.4);
-  }
-  .phase-name {
-    font-size: 23px;
-    font-weight: 700;
-    letter-spacing: 0.1px;
-    color: var(--accent);
-    transition: color 400ms ease;
-  }
-  .sim-controls {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 250ms ease;
-  }
-  .sim-controls.visible { opacity: 1; pointer-events: auto; }
-  .sim-controls .sim-readout {
-    font-size: 14px;
-    color: var(--ink-mid);
-    letter-spacing: 0.2px;
-    min-width: 210px;
-    text-align: right;
-  }
-  .sim-controls .sim-readout strong {
-    color: var(--sun);
-    font-variant-numeric: tabular-nums;
-    font-size: 16px;
-  }
-  .sim-controls button.sim-btn {
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 14px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 209, 102, 0.35);
-    background: rgba(255, 209, 102, 0.08);
-    color: #ffe08a;
-    cursor: pointer;
-    transition: background 150ms, border-color 150ms;
-    white-space: nowrap;
-  }
-  .sim-controls button.sim-btn:hover { background: rgba(255, 209, 102, 0.18); border-color: rgba(255, 209, 102, 0.6); }
-  .sim-controls button.sim-btn.alt {
-    border-color: rgba(94, 234, 212, 0.35);
-    background: rgba(94, 234, 212, 0.08);
-    color: #99f6e4;
-  }
-  .sim-controls button.sim-btn.alt:hover { background: rgba(94, 234, 212, 0.18); border-color: rgba(94, 234, 212, 0.6); }
-  .sim-controls button.sim-btn.hidden { display: none; }
-  .content { margin-top: 14px; }
-  .notes-card {
-    background: var(--note-bg);
-    color: var(--note-ink);
-    padding: 16px 22px 14px;
-    border-radius: 12px;
-    font-size: 15px;
-    line-height: 1.55;
-    position: relative;
-    box-shadow:
-      0 14px 40px rgba(255, 209, 102, 0.08),
-      inset 0 0 0 1px rgba(0,0,0,0.02);
-  }
-  .step-heading {
-    font-weight: 700;
-    font-size: 16px;
-    color: #7a3a00;
-    margin-bottom: 4px;
-    letter-spacing: 0.2px;
-  }
-  .notes-card p { margin: 0 0 6px; }
-  .notes-card strong { font-weight: 700; color: #2a1e08; }
+  body { font-family: var(--font-sans); background: var(--bgMain); color: var(--textPrimary); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  sub, sup { font-size: 0.68em; line-height: 0; }
+  [hidden] { display: none !important; }
 
-  .notebook-prompt {
-    margin-top: 10px;
-    padding: 12px 16px;
-    background: linear-gradient(90deg, rgba(255, 209, 102, 0.15), rgba(244, 114, 182, 0.12));
-    border: 1.5px solid rgba(255, 209, 102, 0.45);
-    border-left: 5px solid #ffd166;
-    border-radius: 10px;
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    font-size: 14px;
-    line-height: 1.5;
-    color: #f3d589;
-  }
-  .notebook-prompt .np-tag {
-    flex-shrink: 0;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 2px;
-    padding: 4px 9px;
-    background: #ffd166;
-    color: #2a1e08;
-    border-radius: 5px;
-    margin-top: 1px;
-  }
-  .notebook-prompt strong { color: #ffd166; font-weight: 700; }
+  /* ---- compact indigo header ---- */
+  header { background: linear-gradient(145deg,#4f46e5,#6366f1); padding: 20px max(24px, calc((100vw - 1276px)/2)) 56px; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 2px); background-size: 30px 30px; pointer-events: none; }
+  header .titles { position: relative; }
+  header .eyebrow { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #e0e7ff; margin-bottom: 4px; }
+  header h1 { font-family: var(--font-serif); font-weight: 700; font-size: clamp(24px,3vw,32px); letter-spacing: -0.032em; color: #fff; margin: 0; }
+  .teacher-bar { position: relative; display: flex; align-items: center; gap: 10px; flex: none; }
+  .teacher-bar[hidden] { display: none; }
+  .tm-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #fff; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4); padding: 6px 11px; border-radius: 999px; white-space: nowrap; }
+  #stepJump { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--textPrimary); background: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 9px; padding: 9px 10px; max-width: 250px; min-height: 40px; }
 
-  nav {
-    margin-top: 14px;
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-  }
-  button {
-    font-family: inherit;
-    font-size: 14px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    padding: 10px 20px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.08);
-    background: rgba(255,255,255,0.03);
-    color: var(--ink-hi);
-    cursor: pointer;
-    transition: background 150ms, transform 50ms, border-color 150ms;
-  }
-  button:hover:not(:disabled) {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(255,255,255,0.15);
-  }
+  .progress-track { max-width: 1340px; margin: -40px auto 0; padding: 0 32px; position: relative; }
+  .step-line { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-bottom: 8px; }
+  .step-line .num, .step-line .count { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+  .step-line .ttl { display: none; }
+  .progress-track .bar { height: 5px; background: rgba(255,255,255,.3); border-radius: 999px; overflow: hidden; }
+  .progress-track .fill { height: 100%; width: 0%; background: #fff; border-radius: 999px; transition: width 350ms ease; }
+
+  main { max-width: 1340px; margin: 0 auto; padding: 22px 32px 28px; }
+  .workspace { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(320px,.92fr); gap: 24px; align-items: start; }
+  .stage { background: var(--bgCard); border: 1px solid var(--borderColor); border-top: 4px solid var(--accentBlue); border-radius: 16px; box-shadow: var(--shadow-md); padding: 16px 18px; min-height: 440px; display: flex; flex-direction: column; animation: fadeUp .4s ease-out; }
+  .stage-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accentBlue); margin-bottom: 8px; }
+  .stage-body { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  canvas { display: block; width: 100%; height: auto; max-height: 340px; object-fit: contain; border-radius: 12px; touch-action: none; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .side { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 12px; }
+  .notes-card { background: var(--note-bg); color: var(--note-ink); padding: 16px 22px 14px; border-radius: 14px; font-size: 16px; line-height: 1.58; box-shadow: var(--shadow-sm); }
+  .notes-card .nc-tag { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--note-head); margin-bottom: 6px; }
+  .step-heading { font-family: var(--font-serif); font-weight: 700; font-size: 21px; letter-spacing: -0.02em; color: var(--note-head); margin: 0 0 6px; outline: none; }
+  .notes-card p { margin: 0; }
+  .notes-card strong { font-weight: 700; color: var(--note-ink); }
+  .notebook-prompt { background: #fff; border: 1px solid var(--borderColor); border-left: 4px solid var(--accentBlue); border-radius: 12px; padding: 13px 16px; display: flex; align-items: flex-start; gap: 11px; font-size: 16px; line-height: 1.5; color: var(--textSecondary); box-shadow: var(--shadow-sm); }
+  .notebook-prompt .np-tag { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; padding: 4px 8px; background: var(--accentBlue); color: #fff; border-radius: 6px; margin-top: 3px; }
+  .notebook-prompt strong { color: var(--textPrimary); font-weight: 700; }
+
+  nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  button { font-family: var(--font-sans); font-size: 16px; font-weight: 600; padding: 10px 18px; min-height: 44px; border-radius: 10px; border: 1px solid var(--borderColor); background: #fff; color: var(--textPrimary); cursor: pointer; transition: background 140ms, border-color 140ms, transform 50ms; }
+  button:hover:not(:disabled) { background: var(--bgMain); border-color: var(--textWarmMuted); }
   button:active:not(:disabled) { transform: translateY(1px); }
-  button:disabled { opacity: 0.3; cursor: not-allowed; }
-  button.primary {
-    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
-    color: #f5f5ff;
-    border-color: rgba(99, 102, 241, 0.55);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.25);
-  }
-  button.primary:hover { filter: brightness(1.08); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  button.primary { background: var(--accentBlue); color: #fff; border-color: var(--accentBlue); box-shadow: 0 4px 14px rgba(99,102,241,0.28); }
+  button.primary:hover:not(:disabled) { background: var(--accentBlueHover); border-color: var(--accentBlueHover); }
+  button.primary:disabled { background: var(--borderColor); border-color: var(--borderColor); color: var(--textSecondary); box-shadow: none; opacity: 1; }
+  button:focus-visible, input:focus-visible, select:focus-visible, .step-heading:focus-visible { outline: 3px solid var(--accentBlueHover); outline-offset: 3px; }
   .btn-group { display: flex; gap: 10px; }
-  @media (max-width: 720px) {
-    .phase-bar { grid-template-columns: 1fr; }
-    .sim-controls { justify-content: space-between; flex-wrap: wrap; }
-    .phase-name { font-size: 20px; }
+  button svg { vertical-align: -2px; }
+
+  .tool-row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+  .tool-row .row-label { font-size: 13px; font-weight: 600; color: var(--textSecondary); min-width: 118px; text-align: right; }
+  .chip { font-family: var(--font-sans); font-size: 14px; font-weight: 600; padding: 8px 14px; min-height: 40px; border-radius: 999px; border: 1px solid var(--borderColor); background: #fff; color: var(--textPrimary); cursor: pointer; }
+  .chip:hover:not(:disabled) { border-color: var(--accentBlue); }
+  .chip.active { background: var(--accentBlue); color: #fff; border-color: var(--accentBlue); }
+  .chip.done:not(.active) { border-color: #86efac; color: #166534; }
+  .slider-row { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 580px; margin: 0 auto; }
+  .slider-row label { font-size: 14px; font-weight: 600; color: var(--textSecondary); white-space: nowrap; }
+  .slider-row .val { font-family: var(--font-mono); font-size: 14px; font-weight: 700; min-width: 120px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] { flex: 1; accent-color: var(--accentBlue); min-width: 0; min-height: 30px; }
+  .status-line { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--textPrimary); text-align: center; line-height: 1.45; min-height: 22px; margin: 0; }
+  .status-line.complete { color: #166534; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .caption { font-style: italic; font-size: 13px; color: var(--textWarmMuted); text-align: center; margin: 0; }
+
+  .gate-status { font-size: 14px; color: var(--textSecondary); line-height: 1.45; margin: 0; }
+  .gate-status.complete { color: #166534; font-weight: 600; }
+  .notebook-confirm { display: flex; align-items: center; gap: 10px; font-size: 15px; line-height: 1.4; min-height: 44px; cursor: pointer; }
+  .notebook-confirm input { width: 20px; height: 20px; flex: none; accent-color: var(--accentBlue); }
+
+  /* trial log (design lab) */
+  .run-log { width: 100%; border: 1px solid var(--borderColor); border-radius: 10px; background: #fff; overflow: hidden; }
+  .run-log .row { display: grid; grid-template-columns: 34px 1.5fr 1fr 1fr 1fr; gap: 6px; padding: 7px 12px; font-size: 13px; border-bottom: 1px solid var(--borderSubtle); align-items: center; }
+  .run-log .row:last-child { border-bottom: none; }
+  .run-log .row.head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--textWarmMuted); font-weight: 700; }
+  .run-log .n { font-family: var(--font-mono); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .run-log .row.best { background: rgba(16,185,129,0.10); }
+  .run-log .row.best .n { color: #166534; }
+  .run-log .empty { padding: 12px; font-size: 13px; color: var(--textWarmMuted); text-align: center; font-style: italic; }
+
+  /* practice, one question at a time */
+  .pq-count { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--accentBlue); }
+  .pq-question { font-family: var(--font-serif); font-weight: 700; font-size: clamp(21px,2.3vw,26px); line-height: 1.3; letter-spacing: -0.02em; color: var(--textWarm); margin: 6px 0 14px; }
+  .pq-label { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--textSecondary); display: block; margin-bottom: 6px; }
+  .pq-input { font-family: var(--font-mono); font-size: 24px; width: 100%; max-width: 360px; min-height: 52px; padding: 8px 12px; border: 1px solid var(--borderColor); border-radius: 10px; background: #fff; color: var(--textPrimary); }
+  .pq-choices { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
+  .pq-choice { text-align: left; font-weight: 500; }
+  .pq-choice.active { border-color: var(--accentBlue); background: #eef2ff; font-weight: 700; }
+  .pq-hint { font-size: 14px; color: var(--textWarmMuted); margin: 8px 0 0; }
+  .pq-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .pq-feedback { min-height: 26px; font-size: 16px; line-height: 1.45; margin: 10px 0 0; font-weight: 600; }
+  .pq-feedback.ok { color: #166534; }
+  .pq-feedback.no { color: #b91c1c; }
+  .pq-solution { margin-top: 12px; padding: 12px 16px; background: var(--bgMain); border: 1px solid var(--borderColor); border-left: 4px solid var(--accentGreen); border-radius: 10px; font-size: 16px; line-height: 1.55; }
+  .pq-solution[hidden] { display: none !important; }
+  .pq-solution ol { margin: 0 0 8px; padding-left: 22px; }
+  .pq-solution .final { font-family: var(--font-serif); font-size: 22px; font-weight: 700; color: var(--textWarm); }
+  .pq-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .pq-progress { margin-top: 14px; }
+  .pq-progress .bar { height: 6px; background: var(--borderSubtle); border-radius: 999px; overflow: hidden; }
+  .pq-progress .fill { height: 100%; background: var(--accentGreen); border-radius: 999px; }
+  .pq-progress p { font-size: 13px; color: var(--textSecondary); margin: 6px 0 0; }
+
+  @media (max-width: 980px) {
+    .workspace { grid-template-columns: minmax(0,1fr); gap: 16px; }
+    .side { position: static; }
+    .stage { min-height: 0; }
+    main { padding-left: 16px; padding-right: 16px; }
+    .progress-track { padding: 0 16px; }
+    header { padding-left: 16px; padding-right: 16px; flex-wrap: wrap; }
+    .teacher-bar { width: 100%; } #stepJump { flex: 1; max-width: none; }
+    .tool-row .row-label { min-width: 0; width: 100%; text-align: center; }
+    canvas { max-height: 300px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="title">How Solar Panels Work</div>
-  <div class="step-indicator" id="stepIndicator">01 / 10</div>
+  <div class="titles">
+    <div class="eyebrow">Solar Engineering</div>
+    <h1>How Solar Panels Work</h1>
+  </div>
+  <div class="teacher-bar" id="teacherBar" hidden>
+    <span class="tm-badge">Teacher mode</span>
+    <select id="stepJump" aria-label="Jump to a step"></select>
+  </div>
 </header>
+<div class="progress-track">
+  <div class="step-line">
+    <span class="now"><span class="num" id="stepNum">Step 01</span><span class="ttl" id="stepTitle"></span></span>
+    <span class="count" id="stepIndicator">01 / 11</span>
+  </div>
+  <div class="bar"><div class="fill" id="progressFill"></div></div>
+</div>
 
 <main>
-  <div class="stage">
-    <canvas id="canvas" width="1600" height="650"></canvas>
-    <div class="phase-bar">
-      <div class="phase-name" id="phaseName">Step 1</div>
-      <div class="sim-controls" id="simControls">
-        <button class="sim-btn alt" id="ctrlA">Action A</button>
-        <button class="sim-btn" id="ctrlB">Action B</button>
-        <div class="sim-readout" id="simReadout"></div>
+  <div class="workspace">
+    <div class="stage">
+      <div class="stage-label" id="stageLabel">What you see</div>
+      <div class="stage-body" id="stage"></div>
+    </div>
+    <div class="side">
+      <div class="notes-card">
+        <div class="nc-tag"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Copy Into Your Notes</div>
+        <h2 class="step-heading" id="stepHeading" tabindex="-1"></h2>
+        <p id="notes"></p>
       </div>
+      <div class="notebook-prompt">
+        <div class="np-tag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>DO</div>
+        <div id="notebookText"></div>
+      </div>
+      <label class="notebook-confirm"><input id="notebookDone" type="checkbox">My notes and notebook task are complete.</label>
+      <p class="gate-status" id="gateStatus" role="status" aria-live="polite"></p>
+      <nav>
+        <button id="resetBtn">Back to start</button>
+        <div class="btn-group">
+          <button id="prevBtn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Back</button>
+          <button id="nextBtn" class="primary">Next <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        </div>
+      </nav>
     </div>
   </div>
-
-  <div class="content">
-    <div class="notes-card">
-      <div class="step-heading" id="stepHeading">Step 1</div>
-      <p id="notes"></p>
-    </div>
-    <div class="notebook-prompt" id="notebookPrompt">
-      <div class="np-tag">✎ NOTES</div>
-      <div id="notebookText"></div>
-    </div>
-  </div>
-
-  <nav>
-    <button id="resetBtn">Start Over</button>
-    <div class="btn-group">
-      <button id="prevBtn">← Back</button>
-      <button id="nextBtn" class="primary">Next →</button>
-    </div>
-  </nav>
 </main>
 
 <script>
 // =====================================================
-//  Canvas setup
+//  Physics model (one source of truth for every step and the tests)
 // =====================================================
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const W = canvas.width;   // 1600
-const H = canvas.height;  // 650
-const MID = H / 2;
+const BAND_GAP = 1.1;                        // eV needed to free an electron in silicon
+const photonEV = nm => 1240 / nm;           // E (eV) = 1240 / wavelength (nm)
+const frees = nm => photonEV(nm) >= BAND_GAP;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const smooth = k => k * k * (3 - 2 * k);
+function bandName(nm) {
+  if (nm > 750) return 'infrared';
+  if (nm < 450) return 'violet'; if (nm < 495) return 'blue'; if (nm < 570) return 'green';
+  if (nm < 590) return 'yellow'; if (nm < 620) return 'orange'; return 'red';
+}
+// Step 1 recap panel: 10 cells in series under a lamp (b = 0..100 %)
+const panelVolts = b => b <= 0 ? 0 : Math.max(0, 10 * (0.6 + 0.026 * Math.log(b / 100)));
+const panelAmps = b => 0.5 * b / 100;
 
-let currentSceneIdx = 0;
-let animT = 0;
-let sceneFadeT = 0;
-let sceneLocal = {};
-function clearField() { sceneLocal = {}; }
-
-// Draggable sun (shared across scenes that use it)
-let sun = { x: 760, y: 130 };
-let dragging = false;
-
-// Colors
-const C_SUN = '#ffd166';
-const C_SUN2 = '#ffb703';
-const C_PHOTON = '#ffe08a';
-const C_ELECTRON = '#5cc9ff';
-const C_ELECTRON_GLOW = 'rgba(92, 201, 255,';
-const C_HOLE = '#ff7a6b';
-const C_HOLE_GLOW = 'rgba(255, 122, 107,';
-const C_WATER = '#5eead4';
-const C_WIRE = '#e0a070';
-const C_ACCENT = '#6366f1';
-const C_OK = '#4ade80';
+// Design lab: where 1000 W of sunlight goes inside one cell (simplified teaching model)
+const SURFACES = [
+  { id: 'none', name: 'No coating', reflect: 0.30 },
+  { id: 'coat', name: 'Coating', reflect: 0.10 },
+  { id: 'tex', name: 'Textured + coating', reflect: 0.03 }
+];
+const SPACINGS = [1, 2, 3, 4];               // mm between metal fingers
+const THICKNESSES = [20, 50, 100, 180, 300]; // micrometers of silicon
+const SILICON_USABLE = 0.30;                 // share of absorbed light energy silicon can turn into electricity
+function cellModel(d) {
+  const s = SURFACES.find(x => x.id === d.surface) || SURFACES[0];
+  const shadeFrac = 0.14 / d.spacing;                 // fingers close together cast more shade
+  const resistFrac = 0.015 * d.spacing * d.spacing;   // fingers far apart make electrons travel farther
+  const absorbFrac = 1 - Math.exp(-d.thick / 40);     // thin silicon lets light pass through
+  const collectFrac = Math.exp(-d.thick / 700);       // thick silicon lets pairs recombine first
+  const S = 1000;
+  const reflect = S * s.reflect, a1 = S - reflect;
+  const shade = a1 * shadeFrac, a2 = a1 - shade;
+  const pass = a2 * (1 - absorbFrac), a3 = a2 - pass;
+  const mismatch = a3 * (1 - SILICON_USABLE), a4 = a3 - mismatch;
+  const recomb = a4 * (1 - collectFrac), a5 = a4 - recomb;
+  const resist = a5 * resistFrac, out = a5 - resist;
+  return { eff: out / S * 100, losses: { reflect, shade, pass, mismatch, recomb, resist, out } };
+}
+const effText = d => cellModel(d).eff.toFixed(1);
+const designKey = d => d.surface + '|' + d.spacing + '|' + d.thick;
+const LAB_VARS = [['surface', 'the surface'], ['spacing', 'the finger spacing'], ['thick', 'the silicon thickness']];
+// a fair test = at least 3 trials that differ only in one variable
+function fairTest(rows) {
+  for (const [v, name] of LAB_VARS) {
+    const groups = {};
+    rows.forEach(r => {
+      const k = LAB_VARS.filter(([o]) => o !== v).map(([o]) => r[o]).join('|');
+      (groups[k] ||= new Set()).add(String(r[v]));
+    });
+    for (const k in groups) if (groups[k].size >= 3) return { variable: v, name, count: groups[k].size };
+  }
+  return null;
+}
+const TARGET_EFF = 20;
 
 // =====================================================
 //  Helpers
 // =====================================================
-function lerp(a, b, t) { return a + (b - a) * t; }
-function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-function smooth(t) { return t * t * (3 - 2 * t); }
-
+const $ = (sel, root = document) => root.querySelector(sel);
+function el(tag, attrs = {}, kids = []) {
+  const n = document.createElement(tag);
+  for (const k in attrs) {
+    if (k === 'class') n.className = attrs[k];
+    else if (k === 'html') n.innerHTML = attrs[k];
+    else if (k.startsWith('on') && typeof attrs[k] === 'function') n.addEventListener(k.slice(2), attrs[k]);
+    else n.setAttribute(k, attrs[k]);
+  }
+  (Array.isArray(kids) ? kids : [kids]).forEach(c => { if (c != null) n.append(c.nodeType ? c : document.createTextNode(c)); });
+  return n;
+}
+function makeCanvas(stage, w, h, label) {
+  const c = el('canvas', { role: 'img', 'aria-label': label || stageLabel.textContent });
+  c.width = w; c.height = h;
+  c.textContent = 'Interactive solar cell model. Use the labeled controls below the image.';
+  stage.append(c);
+  return { c, ctx: c.getContext('2d') };
+}
+function canvasPos(c, e) {
+  const r = c.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * c.width / r.width, y: (e.clientY - r.top) * c.height / r.height };
+}
 function roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
+function hexRgb(hex) { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+const rgba = (hex, a) => { const [r, g, b] = hexRgb(hex); return `rgba(${r},${g},${b},${a})`; };
+const C = {
+  photon: '#f59e0b', electron: '#2563eb', hole: '#e11d48', valence: '#a855f7', field: '#0d9488',
+  heat: '#dc2626', volt: '#4f46e5', amp: '#0d9488', ink: '#1c1917', muted: '#78716c', line: 'rgba(87,83,78,0.45)',
+  nTint: '#dbeafe', pTint: '#ffe4e6', metal: '#94a3b8', good: '#166534'
+};
+// one wavelength-to-color helper for every step
+function wlRGB(nm) {
+  if (nm > 750) return [127, 29, 29];
+  let r = 0, g = 0, b = 0;
+  if (nm < 440) { r = (440 - nm) / 60; b = 1; }
+  else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+  else if (nm < 510) { g = 1; b = (510 - nm) / 20; }
+  else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+  else if (nm < 645) { r = 1; g = (645 - nm) / 65; }
+  else { r = 1; }
+  return [Math.round(r * 215), Math.round(g * 190), Math.round(b * 235)];
+}
+const wlColor = (nm, a = 1) => { const [r, g, b] = wlRGB(nm); return `rgba(${r},${g},${b},${a})`; };
+const icn = (path, size = 15, sw = 2) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+const ICON = {
+  right: icn('<path d="m9 18 6-6-6-6"/>'),
+  zap: icn('<path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/>'),
+  play: icn('<polygon points="6 3 20 12 6 21 6 3"/>'),
+  reset: icn('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
+  sun: icn('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  box: icn('<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/>')
+};
 
-// Glassmorphic label with tapered leader (matches synapse drawLabel)
-function drawLabel(ctx, lx, ly, dotX, dotY, text, color, align) {
+// ---- canvas drawing kit ----
+function drawPill(ctx, text, x, y, color, fontSize = 13, align = 'center') {
   ctx.save();
-  align = align || 'left';
-  // tapered leader
-  const grad = ctx.createLinearGradient(lx, ly, dotX, dotY);
-  grad.addColorStop(0, `rgba(${color},0.85)`);
-  grad.addColorStop(1, `rgba(${color},0.25)`);
-  ctx.strokeStyle = grad;
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(dotX, dotY); ctx.stroke();
-  // dot glow + pulse ring
-  const pulse = (Math.sin(animT / 600 + dotY * 0.03) + 1) * 0.5;
-  const dg = ctx.createRadialGradient(dotX, dotY, 0, dotX, dotY, 12);
-  dg.addColorStop(0, `rgba(${color},0.5)`);
-  dg.addColorStop(1, `rgba(${color},0)`);
-  ctx.fillStyle = dg;
-  ctx.beginPath(); ctx.arc(dotX, dotY, 12, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = `rgba(${color},${0.25 + pulse * 0.3})`;
-  ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.arc(dotX, dotY, 5 + pulse * 2, 0, Math.PI * 2); ctx.stroke();
-  ctx.fillStyle = `rgb(${color})`;
-  ctx.beginPath(); ctx.arc(dotX, dotY, 3.5, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
-  ctx.beginPath(); ctx.arc(dotX - 1, dotY - 1, 1.3, 0, Math.PI * 2); ctx.fill();
-  // pill
-  ctx.font = '600 14px system-ui, -apple-system';
-  const tw = ctx.measureText(text).width;
-  const padX = 11, padY = 7, h = 28;
-  const w = tw + padX * 2;
-  const bx = align === 'right' ? lx - w : lx;
-  const by = ly - h / 2;
-  ctx.shadowColor = `rgba(${color},0.35)`;
-  ctx.shadowBlur = 18; ctx.shadowOffsetY = 3;
-  const bg = ctx.createLinearGradient(bx, by, bx, by + h);
-  bg.addColorStop(0, 'rgba(28,32,48,0.94)');
-  bg.addColorStop(1, 'rgba(14,18,30,0.94)');
-  ctx.fillStyle = bg;
-  roundRect(ctx, bx, by, w, h, 8); ctx.fill();
+  ctx.font = `600 ${fontSize}px Inter, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const bw = ctx.measureText(text).width + 22, bh = fontSize + 12;
+  let bx = align === 'left' ? x : align === 'right' ? x - bw : x - bw / 2;
+  bx = clamp(bx, 2, ctx.canvas.width - bw - 2);
+  const by = clamp(y - bh / 2, 2, ctx.canvas.height - bh - 2);
+  ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(17,17,17,0.10)'; ctx.shadowOffsetY = 2;
+  ctx.fillStyle = '#fff'; roundRect(ctx, bx, by, bw, bh, bh / 2); ctx.fill();
   ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-  ctx.strokeStyle = `rgba(${color},0.55)`;
-  ctx.lineWidth = 1; roundRect(ctx, bx, by, w, h, 8); ctx.stroke();
-  // top gloss
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.beginPath(); ctx.moveTo(bx + 6, by + 1); ctx.lineTo(bx + w - 6, by + 1); ctx.stroke();
-  ctx.fillStyle = `rgb(${color})`;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, bx + padX, ly + 0.5);
+  ctx.strokeStyle = rgba(color, 0.5); ctx.lineWidth = 1.2; roundRect(ctx, bx, by, bw, bh, bh / 2); ctx.stroke();
+  ctx.fillStyle = color; ctx.fillText(text, bx + bw / 2, by + bh / 2 + 0.5);
+  ctx.restore();
+  return { x: bx, w: bw };
+}
+function drawLeader(ctx, x1, y1, x2, y2, color) {
+  ctx.save(); ctx.strokeStyle = rgba(color, 0.5); ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x1, y1, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+}
+function drawElectron(ctx, x, y, r = 7, a = 1) {
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = C.electron; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(x - r * 0.45, y); ctx.lineTo(x + r * 0.45, y); ctx.stroke();
   ctx.restore();
 }
-
-// --- Sun ---
-function drawSun(ctx, x, y, r, intensity, grabbable) {
-  ctx.save();
-  // outer glow scales with intensity
-  const glowR = r * (3.2 + intensity * 1.4);
-  const g = ctx.createRadialGradient(x, y, 0, x, y, glowR);
-  g.addColorStop(0, `rgba(255, 209, 102, ${0.45 + intensity * 0.25})`);
-  g.addColorStop(0.4, 'rgba(255, 183, 3, 0.12)');
-  g.addColorStop(1, 'rgba(255, 183, 3, 0)');
-  ctx.fillStyle = g;
-  ctx.beginPath(); ctx.arc(x, y, glowR, 0, Math.PI * 2); ctx.fill();
-  // rays
-  const nRays = 12;
-  ctx.strokeStyle = `rgba(255, 209, 102, ${0.5 + intensity * 0.4})`;
-  ctx.lineWidth = 3; ctx.lineCap = 'round';
-  for (let i = 0; i < nRays; i++) {
-    const a = (i / nRays) * Math.PI * 2 + animT / 4000;
-    const r1 = r * 1.35, r2 = r * (1.75 + 0.25 * Math.sin(animT / 500 + i));
-    ctx.beginPath();
-    ctx.moveTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1);
-    ctx.lineTo(x + Math.cos(a) * r2, y + Math.sin(a) * r2);
-    ctx.stroke();
-  }
-  // body
-  const bg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
-  bg.addColorStop(0, '#fff4cf');
-  bg.addColorStop(0.6, C_SUN);
-  bg.addColorStop(1, C_SUN2);
-  ctx.fillStyle = bg;
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-  if (grabbable) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-    ctx.setLineDash([4, 5]); ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(x, y, r + 9, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-    ctx.font = '600 12px system-ui';
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('drag me', x, y + r + 26);
-  }
+function drawHole(ctx, x, y, r = 7, a = 1) {
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = C.hole; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x - r * 0.45, y); ctx.lineTo(x + r * 0.45, y); ctx.moveTo(x, y - r * 0.45); ctx.lineTo(x, y + r * 0.45); ctx.stroke();
   ctx.restore();
 }
-
-// light beam from sun to a target rectangle
-function drawBeam(ctx, sx, sy, tx, ty, halfW, intensity) {
-  if (intensity <= 0.02) return;
+function drawIon(ctx, x, y, sign) {
   ctx.save();
-  const ang = Math.atan2(ty - sy, tx - sx);
-  const perp = ang + Math.PI / 2;
-  const ox = Math.cos(perp) * halfW, oy = Math.sin(perp) * halfW;
-  const grad = ctx.createLinearGradient(sx, sy, tx, ty);
-  grad.addColorStop(0, `rgba(255, 224, 138, ${0.32 * intensity})`);
-  grad.addColorStop(1, `rgba(255, 224, 138, ${0.05 * intensity})`);
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.moveTo(sx - ox * 0.2, sy - oy * 0.2);
-  ctx.lineTo(sx + ox * 0.2, sy + oy * 0.2);
-  ctx.lineTo(tx + ox, ty + oy);
-  ctx.lineTo(tx - ox, ty - oy);
-  ctx.closePath(); ctx.fill();
+  const col = sign > 0 ? C.electron : C.hole;
+  ctx.fillStyle = rgba(col, 0.12); ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
+  ctx.beginPath(); ctx.arc(x, y, 11, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = col; ctx.font = '700 15px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(sign > 0 ? '+' : '−', x, y + 1);
   ctx.restore();
 }
-
-// --- Solar panel drawn as a tilted parallelogram (iso look) ---
-// cx,cy = center of panel face; skew = horizontal lean; glow = intensity sheen
-function drawPanel(ctx, cx, cy, w, h, skew, intensity, cols, rows) {
+function drawAtom(ctx, x, y, label, kind = 'Si', r = 20) {
   ctx.save();
-  cols = cols || 6; rows = rows || 4;
-  const hw = w / 2, hh = h / 2;
-  // corners (top edge pushed by skew for a tilt feel)
-  const tl = { x: cx - hw + skew, y: cy - hh };
-  const tr = { x: cx + hw + skew, y: cy - hh };
-  const br = { x: cx + hw, y: cy + hh };
-  const bl = { x: cx - hw, y: cy + hh };
-  function lerpPt(a, b, t) { return { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) }; }
-  // frame shadow
-  ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = 16;
-  ctx.fillStyle = '#0c1830';
-  ctx.beginPath();
-  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
-  ctx.closePath(); ctx.fill();
+  const fill = kind === 'P' ? C.nTint : kind === 'B' ? C.pTint : '#f5f5f4';
+  const stroke = kind === 'P' ? C.electron : kind === 'B' ? C.hole : '#a8a29e';
+  ctx.fillStyle = fill; ctx.strokeStyle = stroke; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.font = '700 13px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(label, x, y + 1);
   ctx.restore();
-  // base
-  const base = ctx.createLinearGradient(tl.x, tl.y, bl.x, bl.y);
-  base.addColorStop(0, '#15326a');
-  base.addColorStop(1, '#0b1c44');
-  ctx.fillStyle = base;
-  ctx.beginPath();
-  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
-  ctx.closePath(); ctx.fill();
-  // cells grid
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const a = lerpPt(lerpPt(tl, tr, c / cols), lerpPt(bl, br, c / cols), r / rows);
-      const b = lerpPt(lerpPt(tl, tr, (c + 1) / cols), lerpPt(bl, br, (c + 1) / cols), r / rows);
-      const d = lerpPt(lerpPt(tl, tr, c / cols), lerpPt(bl, br, c / cols), (r + 1) / rows);
-      const e = lerpPt(lerpPt(tl, tr, (c + 1) / cols), lerpPt(bl, br, (c + 1) / cols), (r + 1) / rows);
-      const cell = ctx.createLinearGradient(a.x, a.y, e.x, e.y);
-      const lit = 0.12 + intensity * 0.35;
-      cell.addColorStop(0, `rgba(56, 116, 220, ${0.55 + lit})`);
-      cell.addColorStop(1, `rgba(20, 50, 120, 0.9)`);
-      ctx.fillStyle = cell;
-      ctx.beginPath();
-      ctx.moveTo(a.x + 2, a.y + 2); ctx.lineTo(b.x - 2, b.y + 2);
-      ctx.lineTo(e.x - 2, e.y - 2); ctx.lineTo(d.x + 2, d.y - 2);
-      ctx.closePath(); ctx.fill();
-    }
-  }
-  // sheen sweep (intensity)
-  if (intensity > 0.05) {
-    const sg = ctx.createLinearGradient(tl.x, tl.y, br.x, br.y);
-    sg.addColorStop(0, `rgba(255,255,255,${0.04 + intensity * 0.16})`);
-    sg.addColorStop(0.5, 'rgba(255,255,255,0.0)');
-    sg.addColorStop(1, `rgba(255,255,255,${intensity * 0.06})`);
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
-    ctx.closePath(); ctx.fill();
-  }
-  // frame edge
-  ctx.strokeStyle = '#9fb3d8'; ctx.lineWidth = 4; ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(tl.x, tl.y); ctx.lineTo(tr.x, tr.y); ctx.lineTo(br.x, br.y); ctx.lineTo(bl.x, bl.y);
-  ctx.closePath(); ctx.stroke();
-  ctx.restore();
-  return { tl, tr, br, bl, out: { x: br.x, y: br.y } };
 }
-
-// --- Motor with spinning blades ---
-function drawMotor(ctx, x, y, r, angle, intensity) {
+function drawDot(ctx, x, y, color, r = 4) { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
+function drawSun(ctx, x, y, r, t = 0, strength = 1) {
   ctx.save();
-  // housing
-  const hg = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.2, x, y, r * 1.3);
-  hg.addColorStop(0, '#3a3f4a'); hg.addColorStop(1, '#15181f');
-  ctx.fillStyle = hg;
-  ctx.beginPath(); ctx.arc(x, y, r * 1.25, 0, Math.PI * 2); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(x, y, r * 1.25, 0, Math.PI * 2); ctx.stroke();
-  // blades
-  ctx.translate(x, y); ctx.rotate(angle);
-  const spin = intensity > 0.05;
+  if (strength < 0.02) {
+    ctx.fillStyle = '#d6d3d1'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.restore(); return;
+  }
+  const glow = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2.6);
+  glow.addColorStop(0, rgba(C.photon, 0.35 * strength)); glow.addColorStop(1, rgba(C.photon, 0));
+  ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, y, r * 2.6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = rgba(C.photon, 0.2 + 0.5 * strength); ctx.lineWidth = 2; ctx.lineCap = 'round';
+  for (let i = 0; i < 12; i++) {
+    const a = i * Math.PI / 6 + t / 3000, r1 = r + 6 + Math.sin(t / 300 + i) * 2, r2 = r1 + 9;
+    ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r1, y + Math.sin(a) * r1); ctx.lineTo(x + Math.cos(a) * r2, y + Math.sin(a) * r2); ctx.stroke();
+  }
+  const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.1, x, y, r);
+  g.addColorStop(0, '#fde68a'); g.addColorStop(0.6, '#fbbf24'); g.addColorStop(1, '#f59e0b');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+// a photon: short wave packet whose ripple spacing follows its wavelength
+function drawPhoton(ctx, x, y, dx, dy, nm, a = 1) {
+  const len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len, px = -uy, py = ux;
+  const L = 56, lam = nm / 38;
+  ctx.save(); ctx.globalAlpha = a;
+  ctx.strokeStyle = wlColor(nm); ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  if (nm > 750) ctx.setLineDash([5, 3]);
+  ctx.beginPath();
+  for (let s = 0; s <= L; s += 1.5) {
+    const w = Math.sin(s / lam * Math.PI * 2) * 5 * Math.sin(s / L * Math.PI);
+    const qx = x - ux * s + px * w, qy = y - uy * s + py * w;
+    s === 0 ? ctx.moveTo(qx, qy) : ctx.lineTo(qx, qy);
+  }
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = wlColor(nm); ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+function drawFan(ctx, x, y, r, angle, on) {
+  ctx.save(); ctx.translate(x, y);
+  ctx.strokeStyle = '#d6d3d1'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, r + 6, 0, Math.PI * 2); ctx.stroke();
+  ctx.rotate(angle);
   for (let i = 0; i < 3; i++) {
-    ctx.rotate((Math.PI * 2) / 3);
-    const bg = ctx.createLinearGradient(0, 0, 0, -r);
-    bg.addColorStop(0, spin ? '#7dd3fc' : '#5b6675');
-    bg.addColorStop(1, spin ? '#3b82f6' : '#3a414c');
-    ctx.fillStyle = bg;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.quadraticCurveTo(r * 0.5, -r * 0.55, r * 0.18, -r);
-    ctx.quadraticCurveTo(0, -r * 0.85, -r * 0.18, -r);
-    ctx.quadraticCurveTo(-r * 0.5, -r * 0.55, 0, 0);
-    ctx.closePath(); ctx.fill();
+    ctx.rotate(Math.PI * 2 / 3);
+    ctx.fillStyle = on ? '#93c5fd' : '#cbd5e1'; ctx.strokeStyle = on ? '#3b82f6' : '#94a3b8'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.ellipse(0, -r * 0.52, r * 0.24, r * 0.5, 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   }
-  // hub
-  ctx.fillStyle = '#cbd5e1';
-  ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-  // motion blur arc when spinning fast
-  if (intensity > 0.4) {
-    ctx.save();
-    ctx.strokeStyle = `rgba(125, 211, 252, ${(intensity - 0.4) * 0.5})`;
-    ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(x, y, r * 1.05, angle, angle + Math.PI * 1.2); ctx.stroke();
-    ctx.restore();
-  }
-}
-
-// --- copper wire path ---
-function drawWire(ctx, pts, flow, color) {
-  ctx.save();
-  ctx.strokeStyle = color || C_WIRE;
-  ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.beginPath();
-  pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(255,235,210,0.3)'; ctx.lineWidth = 1.5;
-  ctx.stroke();
-  // electron flow dots
-  if (flow > 0.02) {
-    let total = 0; const segs = [];
-    for (let i = 1; i < pts.length; i++) {
-      const d = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
-      segs.push(d); total += d;
-    }
-    const n = Math.max(3, Math.round(total / 60));
-    for (let k = 0; k < n; k++) {
-      let d = ((k / n) + (animT / 1400) * flow) % 1 * total;
-      let i = 0;
-      while (i < segs.length && d > segs[i]) { d -= segs[i]; i++; }
-      if (i >= segs.length) i = segs.length - 1;
-      const f = segs[i] ? d / segs[i] : 0;
-      const px = lerp(pts[i].x, pts[i + 1].x, f);
-      const py = lerp(pts[i].y, pts[i + 1].y, f);
-      ctx.fillStyle = C_ELECTRON;
-      ctx.shadowColor = C_ELECTRON; ctx.shadowBlur = 8;
-      ctx.beginPath(); ctx.arc(px, py, 3.5, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
-    }
-  }
+  ctx.fillStyle = '#57534e'; ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2); ctx.fill();
   ctx.restore();
 }
-
-// --- horizontal meter bar ---
-function drawMeter(ctx, x, y, w, label, frac, valueText, color, pinned) {
-  ctx.save();
-  ctx.font = '600 15px system-ui'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(245,245,245,0.85)';
-  ctx.fillText(label, x, y - 16);
-  // track
-  ctx.fillStyle = 'rgba(255,255,255,0.08)';
-  roundRect(ctx, x, y, w, 16, 8); ctx.fill();
-  // fill
-  const fw = clamp(frac, 0, 1) * w;
-  const g = ctx.createLinearGradient(x, y, x + w, y);
-  g.addColorStop(0, color); g.addColorStop(1, color);
-  ctx.fillStyle = g;
-  if (fw > 4) { roundRect(ctx, x, y, fw, 16, 8); ctx.fill(); }
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1;
-  roundRect(ctx, x, y, w, 16, 8); ctx.stroke();
-  // value
-  ctx.fillStyle = color; ctx.font = '700 16px system-ui';
-  ctx.textAlign = 'right';
-  ctx.fillText(valueText, x + w, y - 16);
-  if (pinned) {
-    ctx.fillStyle = 'rgba(160,160,160,0.8)'; ctx.font = '600 11px system-ui';
-    ctx.textAlign = 'left';
-    ctx.fillText('stays nearly constant', x, y + 30);
+// polyline helpers so particles can ride along wires
+function polyLen(pts) { let L = 0; for (let i = 1; i < pts.length; i++) L += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); return L; }
+function polyPoint(pts, s) {
+  for (let i = 1; i < pts.length; i++) {
+    const seg = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    if (s <= seg) { const k = seg ? s / seg : 0; return { x: lerp(pts[i - 1].x, pts[i].x, k), y: lerp(pts[i - 1].y, pts[i].y, k) }; }
+    s -= seg;
   }
-  ctx.restore();
+  return { ...pts[pts.length - 1] };
 }
-
-// intensity from sun position relative to an ideal overhead point
-function overheadIntensity(idealX, idealY, rangeX, rangeY) {
-  const dx = (sun.x - idealX) / rangeX;
-  const dy = (sun.y - idealY) / rangeY;
-  return clamp(1 - Math.sqrt(dx * dx + dy * dy), 0, 1);
+function strokePoly(ctx, pts, color, w = 3) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke(); ctx.restore();
 }
+// seeded random so the same scene always starts the same way
+function seeded(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
 
 // =====================================================
-//  SCENE 1 — The Whole System
+//  Animation loop (the current scene may register a tick)
 // =====================================================
-const PANEL1 = { x: 470, y: 440 };
-const MOTOR1 = { x: 1120, y: 360 };
-const scene1 = {
-  phase: 'Step 1: The Whole System',
-  phaseColor: C_SUN,
-  draggableSun: true,
-  isInteractive: true,
-  notes: "A <strong>solar panel</strong> turns sunlight into <strong>electricity</strong>. The panel connects through wires to a <strong>motor</strong>. When light lands on the panel, the motor spins. More light means a faster spin. No light means no motion.",
-  notebook: "Drag the sun across the sky. Write what happens to the <strong>motor</strong> when the sun is <strong>directly overhead</strong> versus <strong>low and to the side</strong>. Sketch the path: <strong>light to panel to motor</strong>.",
-  setup() { clearField(); sun = { x: 470, y: 120 }; sceneLocal = { motorAngle: 0, intensity: 0 }; },
-  update(dt) {
-    sceneLocal.intensity = overheadIntensity(PANEL1.x, 150, 430, 240);
-    sceneLocal.motorAngle += sceneLocal.intensity * dt * 0.02;
-  },
-  readout() {
-    const pct = Math.round(sceneLocal.intensity * 100);
-    const state = sceneLocal.intensity > 0.05 ? 'spinning' : 'stopped';
-    return `Sunlight: <strong>${pct}%</strong> · Motor: <strong>${state}</strong>`;
-  },
-  draw(ctx, t) {
-    const I = sceneLocal.intensity;
-    drawBeam(ctx, sun.x, sun.y, PANEL1.x, PANEL1.y, 150, I);
-    const p = drawPanel(ctx, PANEL1.x, PANEL1.y, 300, 180, 60, I);
-    // wires from panel out-corner to motor
-    drawWire(ctx, [
-      { x: p.br.x, y: p.br.y }, { x: p.br.x + 40, y: p.br.y + 30 },
-      { x: 820, y: 470 }, { x: MOTOR1.x, y: 470 }, { x: MOTOR1.x, y: MOTOR1.y + 70 }
-    ], I, C_WIRE);
-    drawMotor(ctx, MOTOR1.x, MOTOR1.y, 70, sceneLocal.motorAngle, I);
-    drawLabel(ctx, MOTOR1.x + 110, MOTOR1.y - 30, MOTOR1.x + 55, MOTOR1.y - 40, 'Motor', '125, 211, 252', 'left');
-    drawLabel(ctx, PANEL1.x - 250, PANEL1.y - 20, PANEL1.x - 110, PANEL1.y - 30, 'Solar panel', '147, 179, 216', 'right');
-    drawSun(ctx, sun.x, sun.y, 42, I, true);
-  }
-};
+let currentTick = null, lastTs = null;
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function loop(ts) {
+  if (lastTs == null) lastTs = ts;
+  const dt = Math.min(50, ts - lastTs); lastTs = ts;
+  if (currentTick) currentTick(dt);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
 
 // =====================================================
-//  SCENE 2 — Do Real Work (water pump)
+//  SCENES
 // =====================================================
-const PANEL2 = { x: 360, y: 430 };
-const MOTOR2 = { x: 760, y: 360 };
-const scene2 = {
-  phase: 'Step 2: Do Real Work',
-  phaseColor: C_WATER,
-  draggableSun: true,
-  isInteractive: true,
-  notes: "Electricity from the panel can do real <strong>work</strong>. Here the motor drives a <strong>water pump</strong> that pushes water up a tube into a tank. The brighter the light, the <strong>faster</strong> the water moves. You are watching <strong>energy change form</strong>: light to electricity to motion to moving water.",
-  notebook: "Keep the sun bright and watch the <strong>water level</strong> rise. Record the <strong>flow rate</strong> at full sun and at half sun. Write one sentence answering: where did the energy come from?",
-  setup() { clearField(); sun = { x: 360, y: 120 }; sceneLocal = { motorAngle: 0, intensity: 0, level: 0, moved: 0, drops: [] }; },
-  update(dt) {
-    const I = overheadIntensity(PANEL2.x, 150, 430, 240);
-    sceneLocal.intensity = I;
-    sceneLocal.motorAngle += I * dt * 0.02;
-    const rate = I * 0.9; // mL/s scaled
-    sceneLocal.moved += rate * dt / 1000 * 100;
-    sceneLocal.level = clamp(sceneLocal.level + rate * dt / 1000 * 0.18, 0, 1);
-    if (sceneLocal.level >= 1) sceneLocal.level = 1;
-    // droplets along tube
-    if (I > 0.05 && Math.random() < I * 0.5) sceneLocal.drops.push({ p: 0 });
-    sceneLocal.drops.forEach(d => d.p += I * dt / 1000 * 0.7);
-    sceneLocal.drops = sceneLocal.drops.filter(d => d.p < 1);
-  },
-  readout() {
-    const rate = (sceneLocal.intensity * 90).toFixed(0);
-    return `Flow: <strong>${rate} mL/s</strong> · Moved: <strong>${Math.round(sceneLocal.moved)} mL</strong>`;
-  },
-  draw(ctx, t) {
-    const I = sceneLocal.intensity;
-    drawBeam(ctx, sun.x, sun.y, PANEL2.x, PANEL2.y, 130, I);
-    const p = drawPanel(ctx, PANEL2.x, PANEL2.y, 240, 150, 48, I);
-    drawWire(ctx, [
-      { x: p.br.x, y: p.br.y }, { x: 560, y: 470 }, { x: MOTOR2.x, y: 470 }, { x: MOTOR2.x, y: MOTOR2.y + 58 }
-    ], I, C_WIRE);
-    drawMotor(ctx, MOTOR2.x, MOTOR2.y, 56, sceneLocal.motorAngle, I);
-    // pump + tube + tank on the right
-    const tubePts = [
-      { x: MOTOR2.x + 56, y: MOTOR2.y }, { x: 920, y: 360 }, { x: 980, y: 200 }, { x: 1120, y: 200 }
-    ];
-    // tube casing
-    ctx.save();
-    ctx.strokeStyle = 'rgba(180,200,210,0.35)'; ctx.lineWidth = 22; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath(); tubePts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
-    ctx.strokeStyle = 'rgba(94,234,212,0.22)'; ctx.lineWidth = 14;
-    ctx.beginPath(); tubePts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.stroke();
-    ctx.restore();
-    // droplets
-    const segLen = [];
-    let tot = 0;
-    for (let i = 1; i < tubePts.length; i++) { const d = Math.hypot(tubePts[i].x - tubePts[i - 1].x, tubePts[i].y - tubePts[i - 1].y); segLen.push(d); tot += d; }
-    sceneLocal.drops.forEach(drop => {
-      let d = drop.p * tot, i = 0;
-      while (i < segLen.length && d > segLen[i]) { d -= segLen[i]; i++; }
-      if (i >= segLen.length) i = segLen.length - 1;
-      const f = segLen[i] ? d / segLen[i] : 0;
-      const px = lerp(tubePts[i].x, tubePts[i + 1].x, f);
-      const py = lerp(tubePts[i].y, tubePts[i + 1].y, f);
-      ctx.fillStyle = C_WATER; ctx.shadowColor = C_WATER; ctx.shadowBlur = 8;
-      ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    });
-    // tank
-    const tank = { x: 1120, y: 180, w: 150, h: 200 };
-    ctx.save();
-    ctx.strokeStyle = 'rgba(200,220,230,0.6)'; ctx.lineWidth = 4;
-    roundRect(ctx, tank.x, tank.y, tank.w, tank.h, 10); ctx.stroke();
-    const wl = tank.y + tank.h - sceneLocal.level * (tank.h - 8);
-    const wg = ctx.createLinearGradient(0, wl, 0, tank.y + tank.h);
-    wg.addColorStop(0, 'rgba(94,234,212,0.85)'); wg.addColorStop(1, 'rgba(45,150,160,0.9)');
-    ctx.fillStyle = wg;
-    roundRect(ctx, tank.x + 3, wl, tank.w - 6, tank.y + tank.h - wl - 3, 8); ctx.fill();
-    ctx.restore();
-    drawLabel(ctx, tank.x + tank.w + 30, tank.y + 30, tank.x + tank.w - 6, tank.y + 30, 'Water tank', '94, 234, 212', 'left');
-    drawLabel(ctx, MOTOR2.x - 70, MOTOR2.y - 90, MOTOR2.x, MOTOR2.y - 50, 'Pump', '125, 211, 252', 'right');
-    drawSun(ctx, sun.x, sun.y, 38, I, true);
-  }
-};
+const scenes = [];
 
-// =====================================================
-//  SCENE 3 — Make a Prediction (black box)
-// =====================================================
-const scene3 = {
-  phase: 'Step 3: Make a Prediction',
-  phaseColor: C_ACCENT,
-  notes: "You have seen light go in and work come out. Before we open the panel, make a <strong>prediction</strong>. Right now the panel is a <strong>black box</strong>. Your job as an engineer is to guess what is happening inside before you look.",
-  notebook: "Predict: <strong>HOW</strong> does light become electricity inside the panel? Draw the panel as a box. Label the <strong>input</strong> (light) and the <strong>output</strong> (electric current). Write your best guess for the hidden mechanism.",
-  setup() { clearField(); sceneLocal = { photons: [] }; },
-  update(dt) {
-    if (Math.random() < 0.25) sceneLocal.photons.push({ x: 120 + Math.random() * 200, y: 80, p: 0 });
-    sceneLocal.photons.forEach(ph => ph.p += dt / 1000 * 0.6);
-    sceneLocal.photons = sceneLocal.photons.filter(ph => ph.p < 1);
-  },
-  draw(ctx, t) {
-    const bx = 600, by = 230, bw = 400, bh = 220;
-    // incoming photons (left, into box)
-    sceneLocal.photons.forEach(ph => {
-      const x = lerp(ph.x, bx, smooth(ph.p));
-      const y = lerp(ph.y, by + bh / 2, smooth(ph.p));
-      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    });
-    drawLabel(ctx, 250, by + bh / 2, 480, by + bh / 2, 'Light goes IN', '255, 209, 102', 'right');
-    // the black box
-    ctx.save();
-    const g = ctx.createLinearGradient(bx, by, bx, by + bh);
-    g.addColorStop(0, '#10131c'); g.addColorStop(1, '#05060a');
-    ctx.fillStyle = g;
-    ctx.shadowColor = 'rgba(99,102,241,0.3)'; ctx.shadowBlur = 40;
-    roundRect(ctx, bx, by, bw, bh, 18); ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(99,102,241,0.5)'; ctx.lineWidth = 2;
-    roundRect(ctx, bx, by, bw, bh, 18); ctx.stroke();
-    // big question mark
-    ctx.fillStyle = `rgba(99,102,241,${0.5 + 0.3 * Math.sin(t / 600)})`;
-    ctx.font = '900 130px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('?', bx + bw / 2, by + bh / 2 + 6);
-    ctx.fillStyle = 'rgba(245,245,245,0.5)'; ctx.font = '600 16px system-ui';
-    ctx.fillText('SOLAR PANEL', bx + bw / 2, by + bh - 26);
-    ctx.restore();
-    // output current arrow (right)
-    drawWire(ctx, [{ x: bx + bw, y: by + bh / 2 }, { x: bx + bw + 180, y: by + bh / 2 }], 1, C_WIRE);
-    drawLabel(ctx, bx + bw + 200, by + bh / 2, bx + bw + 180, by + bh / 2, 'Current comes OUT', '125, 211, 252', 'left');
-  }
-};
-
-// =====================================================
-//  SCENE 4 — Inside the Panel (exploded layers)
-// =====================================================
-const LAYERS = [
-  { name: 'Glass cover', c: '173, 216, 255', desc: 'protects' },
-  { name: 'Anti-reflective coating', c: '94, 234, 212', desc: 'traps light' },
-  { name: 'Front contacts', c: '203, 213, 225', desc: 'collect current' },
-  { name: 'N-type silicon', c: '92, 201, 255', desc: 'extra electrons' },
-  { name: 'P-N junction', c: '255, 209, 102', desc: 'the engine' },
-  { name: 'P-type silicon', c: '255, 122, 107', desc: 'extra holes' },
-  { name: 'Back contact', c: '148, 163, 184', desc: 'closes circuit' }
-];
-const scene4 = {
-  phase: 'Step 4: Inside the Panel',
-  phaseColor: C_ELECTRON,
-  notes: "A solar cell is built in <strong>layers</strong>. A <strong>glass cover</strong> protects it. An <strong>anti-reflective coating</strong> traps light so none is wasted. Thin <strong>metal fingers</strong> collect current on top. The heart is two layers of <strong>silicon</strong>: an <strong>n-type</strong> layer with extra electrons and a <strong>p-type</strong> layer with extra holes. A <strong>back contact</strong> closes the circuit.",
-  notebook: "Sketch the layer stack top to bottom. Label: <strong>glass, anti-reflective coating, front contacts, n-type silicon, p-type silicon, back contact</strong>. Star the two silicon layers as the part that does the real work.",
-  setup() { clearField(); sceneLocal = { explode: 0 }; },
-  update(dt) { sceneLocal.explode = clamp(sceneLocal.explode + dt / 1100, 0, 1); },
-  draw(ctx, t) {
-    const cx = 560, topY = 90, lw = 460, lh = 44;
-    const gap = smooth(sceneLocal.explode) * 22;
-    const stackH = LAYERS.length * lh;
-    LAYERS.forEach((L, i) => {
-      const isJunction = L.name === 'P-N junction';
-      const h = isJunction ? 10 : lh - 8;
-      const y = topY + i * (lh + gap) + (isJunction ? (lh - h) / 2 : 0);
-      ctx.save();
-      const g = ctx.createLinearGradient(cx, y, cx, y + h);
-      g.addColorStop(0, `rgba(${L.c},0.9)`);
-      g.addColorStop(1, `rgba(${L.c},0.45)`);
-      ctx.fillStyle = g;
-      ctx.shadowColor = `rgba(${L.c},0.4)`; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
-      roundRect(ctx, cx, y, lw, h, 7); ctx.fill();
-      ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
-      // top white edge highlight
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(cx + 6, y + 1); ctx.lineTo(cx + lw - 6, y + 1); ctx.stroke();
-      // front contact fingers
-      if (L.name === 'Front contacts') {
-        ctx.fillStyle = 'rgba(120,130,145,0.9)';
-        for (let f = 0; f < 14; f++) { ctx.fillRect(cx + 20 + f * 31, y - 6, 4, h + 6); }
-      }
+// ---- What you already know ----
+scenes.push({
+  heading: 'What You Already Know',
+  seeLabel: 'A sealed panel, a meter, and a fan',
+  notes: "<strong>You already know that a solar panel turns light into electricity.</strong> <strong>Voltage</strong> is the push on the charges, measured in volts. <strong>Current</strong> is how much charge flows each second, measured in amps. More light means more current, so the fan spins faster. What you don't know yet is what happens inside the panel. Let's go inside.",
+  notebook: "<strong>Record</strong> the volts and amps at 0%, 50%, and 100% light. Then <strong>predict</strong>: sketch what you think is inside the panel that turns light into a push on charges. Label your guess.",
+  build(stage) {
+    const st = sceneState('light', { b: 50, dark: false, full: false });
+    requireTask('dark', 'Turn the light down to 0%');
+    requireTask('full', 'Turn the light up to 100%');
+    setTask('dark', st.dark); setTask('full', st.full);
+    const { ctx } = makeCanvas(stage, 860, 320, 'A lamp shines on a sealed solar panel wired through a meter to a fan');
+    const range = el('input', { type: 'range', min: 0, max: 100, step: 5, value: st.b, 'aria-label': 'Light brightness in percent' });
+    const val = el('span', { class: 'val' });
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'slider-row' }, [el('label', {}, 'Light'), range, val]), status);
+    function update() {
+      const b = st.b, V = panelVolts(b), I = panelAmps(b);
+      val.textContent = b + '%';
+      if (b === 0 && !st.dark) { st.dark = true; setTask('dark', true); }
+      if (b === 100 && !st.full) { st.full = true; setTask('full', true); }
+      status.innerHTML = b === 0 ? 'Light 0%: 0.0 V and 0.00 A. The fan stops.' : `Light ${b}%: <span class="mono">${V.toFixed(1)} V</span> of push and <span class="mono">${I.toFixed(2)} A</span> of flow.`;
+      persistWork();
+    }
+    range.addEventListener('input', () => { st.b = +range.value; update(); });
+    update();
+    const top = [{ x: 318, y: 196 }, { x: 430, y: 196 }], top2 = [{ x: 610, y: 196 }, { x: 700, y: 196 }, { x: 700, y: 238 }];
+    const loopPts = [{ x: 318, y: 196 }, { x: 700, y: 196 }, { x: 700, y: 238 }, { x: 740, y: 238 }, { x: 740, y: 292 }, { x: 250, y: 292 }, { x: 250, y: 242 }];
+    const loopL = polyLen(loopPts);
+    let t = 0, ang = 0, flow = 0;
+    function draw() {
+      const b = st.b / 100, V = panelVolts(st.b), I = panelAmps(st.b);
+      ctx.clearRect(0, 0, 860, 320);
+      // light rays onto the panel
+      ctx.save(); ctx.strokeStyle = rgba(C.photon, 0.08 + 0.5 * b); ctx.lineWidth = 2; ctx.lineCap = 'round';
+      for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo(180 + i * 4, 90); ctx.lineTo(100 + i * 40, 170); ctx.stroke(); }
       ctx.restore();
-      // label
-      drawLabel(ctx, cx + lw + 60, y + h / 2, cx + lw, y + h / 2, L.name + ' · ' + L.desc, L.c, 'left');
-    });
-    // photon entering top
-    const py = topY - 40 + ((t / 12) % (stackH + 60));
-    if (py < topY + 4 * (lh + gap)) {
-      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 12;
-      ctx.beginPath(); ctx.arc(cx + lw / 2, py, 5, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    }
-  }
-};
-
-// =====================================================
-//  SCENE 5 — The Photoelectric Effect
-// =====================================================
-const scene5 = {
-  phase: 'Step 5: The Photoelectric Effect',
-  phaseColor: C_SUN,
-  notes: "This is the key idea. A particle of light is a <strong>photon</strong>. When a photon with enough <strong>energy</strong> strikes a silicon atom, it knocks an <strong>electron</strong> loose. The freed electron leaves behind an empty spot called a <strong>hole</strong>. This is the <strong>photoelectric effect</strong>: light energy becomes a free electric charge.",
-  notebook: "Draw a <strong>photon</strong> hitting silicon and freeing an <strong>electron</strong> (negative). Label the <strong>hole</strong> it leaves behind (positive). Write the rule: <strong>enough photon energy = one freed electron</strong>.",
-  setup() {
-    clearField();
-    const atoms = [];
-    const cols = 9, rows = 4;
-    const x0 = 360, y0 = 230, dx = 110, dy = 95;
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
-      atoms.push({ x: x0 + c * dx + (r % 2) * 55, y: y0 + r * dy, freed: 0 });
-    sceneLocal = { atoms, photons: [], electrons: [], spawnT: 0 };
-  },
-  update(dt) {
-    sceneLocal.spawnT += dt;
-    if (sceneLocal.spawnT > 520) {
-      sceneLocal.spawnT = 0;
-      const a = sceneLocal.atoms[Math.floor(Math.random() * sceneLocal.atoms.length)];
-      sceneLocal.photons.push({ x: a.x - 260, y: a.y - 240, tx: a.x, ty: a.y, p: 0, atom: a });
-    }
-    sceneLocal.photons.forEach(ph => {
-      ph.p += dt / 1000 * 1.1;
-      if (ph.p >= 1 && !ph.done) {
-        ph.done = true; ph.atom.freed = 1;
-        sceneLocal.electrons.push({ x: ph.atom.x, y: ph.atom.y, vx: (Math.random() - 0.5) * 1.2, vy: -1.6 - Math.random(), life: 1 });
-      }
-    });
-    sceneLocal.photons = sceneLocal.photons.filter(ph => ph.p < 1.05);
-    sceneLocal.electrons.forEach(e => { e.x += e.vx; e.y += e.vy; e.vy += 0.01; e.life -= dt / 2200; });
-    sceneLocal.electrons = sceneLocal.electrons.filter(e => e.life > 0);
-    sceneLocal.atoms.forEach(a => { if (a.freed > 0) a.freed = Math.max(0, a.freed - dt / 2600); });
-  },
-  draw(ctx, t) {
-    // silicon lattice
-    ctx.save();
-    ctx.strokeStyle = 'rgba(120,140,170,0.18)'; ctx.lineWidth = 2;
-    sceneLocal.atoms.forEach(a => {
-      sceneLocal.atoms.forEach(b => {
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (d > 1 && d < 130) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
-      });
-    });
-    ctx.restore();
-    sceneLocal.atoms.forEach(a => {
-      const holeGlow = a.freed;
-      // hole highlight
-      if (holeGlow > 0.02) {
-        const hg = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, 26);
-        hg.addColorStop(0, C_HOLE_GLOW + (holeGlow * 0.7) + ')');
-        hg.addColorStop(1, C_HOLE_GLOW + '0)');
-        ctx.fillStyle = hg; ctx.beginPath(); ctx.arc(a.x, a.y, 26, 0, Math.PI * 2); ctx.fill();
-      }
-      const ag = ctx.createRadialGradient(a.x - 4, a.y - 4, 1, a.x, a.y, 16);
-      if (holeGlow > 0.5) { ag.addColorStop(0, '#ffb3a8'); ag.addColorStop(1, '#b3463a'); }
-      else { ag.addColorStop(0, '#9fb6d8'); ag.addColorStop(1, '#46557a'); }
-      ctx.fillStyle = ag;
-      ctx.beginPath(); ctx.arc(a.x, a.y, 15, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
-      ctx.font = '700 11px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('Si', a.x, a.y);
-      if (holeGlow > 0.5) {
-        ctx.fillStyle = C_HOLE; ctx.font = '900 18px system-ui';
-        ctx.fillText('+', a.x + 20, a.y - 16);
-      }
-    });
-    // photons
-    sceneLocal.photons.forEach(ph => {
-      const x = lerp(ph.x, ph.tx, smooth(clamp(ph.p, 0, 1)));
-      const y = lerp(ph.y, ph.ty, smooth(clamp(ph.p, 0, 1)));
-      ctx.strokeStyle = `rgba(255,224,138,0.4)`; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(ph.x, ph.y); ctx.lineTo(x, y); ctx.stroke();
-      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 14;
-      ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    });
-    // freed electrons
-    sceneLocal.electrons.forEach(e => {
-      ctx.save(); ctx.globalAlpha = clamp(e.life, 0, 1);
-      const g = ctx.createRadialGradient(e.x, e.y, 0, e.x, e.y, 16);
-      g.addColorStop(0, C_ELECTRON_GLOW + '0.6)'); g.addColorStop(1, C_ELECTRON_GLOW + '0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(e.x, e.y, 16, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = C_ELECTRON; ctx.beginPath(); ctx.arc(e.x, e.y, 7, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = '900 12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('−', e.x, e.y);
+      drawSun(ctx, 190, 58, 24, t, b);
+      // sealed panel
+      ctx.save(); ctx.fillStyle = '#1e293b'; roundRect(ctx, 80, 172, 238, 70, 10); ctx.fill();
+      ctx.strokeStyle = 'rgba(148,163,184,0.35)'; ctx.lineWidth = 1;
+      for (let i = 1; i < 6; i++) { ctx.beginPath(); ctx.moveTo(80 + i * 39.6, 176); ctx.lineTo(80 + i * 39.6, 238); ctx.stroke(); }
+      ctx.fillStyle = '#fff'; ctx.font = '700 34px Roboto Serif, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', 199, 208);
       ctx.restore();
-    });
-    drawLabel(ctx, 200, 150, 360, 200, 'Photon (light)', '255, 209, 102', 'right');
-    drawLabel(ctx, 1140, 180, 1040, 230, 'Freed electron', '92, 201, 255', 'left');
-  }
-};
-
-// =====================================================
-//  SCENE 6 — The P-N Junction
-// =====================================================
-const scene6 = {
-  phase: 'Step 6: The P-N Junction',
-  phaseColor: C_OK,
-  notes: "Free electrons alone are not enough. They need a <strong>push</strong> in one direction. Where the <strong>n-type</strong> and <strong>p-type</strong> silicon meet, a built-in <strong>electric field</strong> forms at the <strong>junction</strong>. This field sweeps freed electrons one way and holes the other. That one-way flow is <strong>direct current</strong> (DC), pushed out through the wire to do work.",
-  notebook: "Draw the <strong>n-type</strong> and <strong>p-type</strong> layers with the <strong>junction</strong> between them. Add an arrow for the <strong>built-in field</strong>. Show electrons flowing out the wire, through the motor, and back. Label this <strong>DC current</strong>.",
-  setup() {
-    clearField();
-    sceneLocal = { carriers: [], spawnT: 0, motorAngle: 0 };
-  },
-  update(dt) {
-    sceneLocal.motorAngle += dt * 0.012;
-    sceneLocal.spawnT += dt;
-    if (sceneLocal.spawnT > 600) {
-      sceneLocal.spawnT = 0;
-      // freed electron-hole pair near junction
-      sceneLocal.carriers.push({ type: 'e', x: 800 + (Math.random() - 0.5) * 30, y: 260 + Math.random() * 120, stage: 'sweep', p: 0 });
-      sceneLocal.carriers.push({ type: 'h', x: 800 + (Math.random() - 0.5) * 30, y: 260 + Math.random() * 120, stage: 'sweep', p: 0 });
-    }
-    sceneLocal.carriers.forEach(c => {
-      if (c.stage === 'sweep') {
-        c.p += dt / 1000 * 0.8;
-        if (c.type === 'e') c.x = lerp(c.x, 560, 0.04); else c.x = lerp(c.x, 1040, 0.04);
-        if (c.p >= 1) { c.stage = 'done'; }
-      }
-    });
-    sceneLocal.carriers = sceneLocal.carriers.filter(c => c.p < 1.4);
-  },
-  draw(ctx, t) {
-    const top = 200, bot = 460, jx = 800;
-    // n region (left)
-    ctx.fillStyle = 'rgba(56, 116, 220, 0.16)';
-    ctx.fillRect(380, top, jx - 380, bot - top);
-    // p region (right)
-    ctx.fillStyle = 'rgba(255, 122, 107, 0.13)';
-    ctx.fillRect(jx, top, 420, bot - top);
-    // depletion band
-    const dg = ctx.createLinearGradient(jx - 60, 0, jx + 60, 0);
-    dg.addColorStop(0, 'rgba(255,209,102,0)');
-    dg.addColorStop(0.5, 'rgba(255,209,102,0.22)');
-    dg.addColorStop(1, 'rgba(255,209,102,0)');
-    ctx.fillStyle = dg; ctx.fillRect(jx - 60, top, 120, bot - top);
-    ctx.strokeStyle = 'rgba(255,209,102,0.6)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(jx, top); ctx.lineTo(jx, bot); ctx.stroke(); ctx.setLineDash([]);
-    // field arrows (n -> p inside band)
-    ctx.strokeStyle = 'rgba(255,209,102,0.7)'; ctx.fillStyle = 'rgba(255,209,102,0.7)'; ctx.lineWidth = 2;
-    for (let i = 0; i < 3; i++) {
-      const ay = top + 60 + i * 110;
-      ctx.beginPath(); ctx.moveTo(jx - 38, ay); ctx.lineTo(jx + 30, ay); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(jx + 30, ay); ctx.lineTo(jx + 22, ay - 5); ctx.lineTo(jx + 22, ay + 5); ctx.closePath(); ctx.fill();
-    }
-    // region labels
-    ctx.fillStyle = C_ELECTRON; ctx.font = '800 26px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText('N-type', 500, top - 20);
-    ctx.fillStyle = C_HOLE; ctx.fillText('P-type', 1000, top - 20);
-    ctx.fillStyle = 'rgba(255,209,102,0.9)'; ctx.font = '700 15px system-ui';
-    ctx.fillText('built-in field', jx, bot + 26);
-    // carriers
-    sceneLocal.carriers.forEach(c => {
-      const col = c.type === 'e' ? C_ELECTRON : C_HOLE;
-      const glow = c.type === 'e' ? C_ELECTRON_GLOW : C_HOLE_GLOW;
-      const g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, 15);
-      g.addColorStop(0, glow + '0.55)'); g.addColorStop(1, glow + '0)');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(c.x, c.y, 15, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(c.x, c.y, 6.5, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.font = '900 12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(c.type === 'e' ? '−' : '+', c.x, c.y);
-    });
-    // external circuit: from n-side top, out to a motor, back to p-side bottom
-    drawWire(ctx, [
-      { x: 420, y: top }, { x: 420, y: 120 }, { x: 800, y: 120 }
-    ], 1, C_WIRE);
-    drawMotor(ctx, 880, 120, 42, sceneLocal.motorAngle, 1);
-    drawWire(ctx, [
-      { x: 960, y: 120 }, { x: 1180, y: 120 }, { x: 1180, y: bot }, { x: 1180, y: bot }
-    ], 1, C_WIRE);
-    drawWire(ctx, [{ x: 1180, y: bot }, { x: 1180, y: bot + 20 }, { x: 420, y: bot + 20 }, { x: 420, y: bot }], 1, C_WIRE);
-    drawLabel(ctx, 700, 90, 720, 120, 'DC current out', '125, 211, 252', 'right');
-  }
-};
-
-// =====================================================
-//  SCENE 7 — One Cell's Output (V vs I)
-// =====================================================
-const PANEL7 = { x: 470, y: 400 };
-const scene7 = {
-  phase: "Step 7: One Cell's Output",
-  phaseColor: C_HOLE,
-  draggableSun: true,
-  isInteractive: true,
-  notes: "One silicon cell makes about <strong>0.5 to 0.6 volts</strong>. Here is the surprise: the <strong>voltage barely changes</strong> with brightness. What changes is the <strong>current</strong> (amps). More light frees more electrons every second, so <strong>more current flows</strong>. Brightness controls amps, not volts.",
-  notebook: "Drag the sun and watch both meters. Record: what happens to <strong>voltage</strong> as the light changes? What happens to <strong>current</strong>? Write the rule in your own words: <strong>light controls ____, not ____</strong>.",
-  setup() { clearField(); sun = { x: 470, y: 120 }; sceneLocal = { intensity: 0, motorAngle: 0 }; },
-  update(dt) {
-    sceneLocal.intensity = overheadIntensity(PANEL7.x, 150, 430, 240);
-    sceneLocal.motorAngle += sceneLocal.intensity * dt * 0.02;
-  },
-  readout() {
-    const v = (0.5 + sceneLocal.intensity * 0.08).toFixed(2);
-    const a = (sceneLocal.intensity * 2.0).toFixed(2);
-    return `Voltage: <strong>${v} V</strong> · Current: <strong>${a} A</strong>`;
-  },
-  draw(ctx, t) {
-    const I = sceneLocal.intensity;
-    drawBeam(ctx, sun.x, sun.y, PANEL7.x, PANEL7.y, 130, I);
-    drawPanel(ctx, PANEL7.x, PANEL7.y, 240, 150, 48, I, 4, 3);
-    drawSun(ctx, sun.x, sun.y, 38, I, true);
-    // meters on right
-    const v = 0.5 + I * 0.08;     // volts, nearly fixed
-    const a = I * 2.0;            // amps, scales with light
-    drawMeter(ctx, 820, 230, 360, 'Voltage', v / 0.7, v.toFixed(2) + ' V', C_HOLE, true);
-    drawMeter(ctx, 820, 360, 360, 'Current', a / 2.2, a.toFixed(2) + ' A', C_ELECTRON, false);
-    ctx.fillStyle = 'rgba(245,245,245,0.6)'; ctx.font = '600 14px system-ui'; ctx.textAlign = 'left';
-    ctx.fillText('Drag the sun. Watch which needle moves.', 820, 470);
-  }
-};
-
-// =====================================================
-//  SCENE 8 — Wiring: Series vs Parallel
-// =====================================================
-const scene8 = {
-  phase: 'Step 8: Wiring · Series vs Parallel',
-  phaseColor: C_ACCENT,
-  isInteractive: true,
-  controls: {
-    aLabel: 'Series ⇄ Parallel', aClass: 'alt',
-    bLabel: '',
-    onA() { sceneLocal.series = !sceneLocal.series; }
-  },
-  notes: "To power bigger jobs you wire many cells together. <strong>Series</strong> (end to end) <strong>adds the voltages</strong> but keeps the current the same. <strong>Parallel</strong> (side by side) keeps the <strong>voltage the same</strong> but <strong>adds the currents</strong>. Engineers choose the wiring to match the job.",
-  notebook: "Toggle between <strong>series</strong> and <strong>parallel</strong>. Make a two-column table. For each, record the <strong>voltage</strong> and the <strong>current</strong> of the three-cell array. Write when you would choose each one.",
-  setup() { clearField(); sceneLocal = { series: true, intensity: 1 }; },
-  update(dt) {},
-  readout() {
-    const cellV = 0.55, cellA = 2.0;
-    const v = sceneLocal.series ? cellV * 3 : cellV;
-    const a = sceneLocal.series ? cellA : cellA * 3;
-    const mode = sceneLocal.series ? 'Series' : 'Parallel';
-    return `${mode} · <strong>${v.toFixed(2)} V</strong> · <strong>${a.toFixed(1)} A</strong>`;
-  },
-  draw(ctx, t) {
-    const series = sceneLocal.series;
-    const cellY = 200, cw = 150, ch = 90;
-    const xs = [320, 540, 760];
-    // draw three cells
-    function cell(x, label) {
-      ctx.save();
-      const g = ctx.createLinearGradient(x, cellY, x, cellY + ch);
-      g.addColorStop(0, 'rgba(56,116,220,0.85)'); g.addColorStop(1, 'rgba(20,50,120,0.9)');
-      ctx.fillStyle = g; roundRect(ctx, x, cellY, cw, ch, 8); ctx.fill();
-      ctx.strokeStyle = '#9fb3d8'; ctx.lineWidth = 2; roundRect(ctx, x, cellY, cw, ch, 8); ctx.stroke();
-      // grid lines
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      for (let i = 1; i < 3; i++) { ctx.beginPath(); ctx.moveTo(x + i * cw / 3, cellY); ctx.lineTo(x + i * cw / 3, cellY + ch); ctx.stroke(); }
-      ctx.fillStyle = '#fff'; ctx.font = '700 13px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText('0.55 V', x + cw / 2, cellY + ch / 2 + 4);
-      // terminals
-      ctx.fillStyle = C_HOLE; ctx.font = '900 16px system-ui';
-      ctx.fillText('+', x + 12, cellY - 8);
-      ctx.fillStyle = C_ELECTRON; ctx.fillText('−', x + cw - 12, cellY - 8);
+      drawPill(ctx, 'solar panel (sealed)', 199, 268, C.muted, 12);
+      // wires (loop) with charges riding them
+      strokePoly(ctx, top, '#dc2626'); strokePoly(ctx, top2, '#dc2626');
+      strokePoly(ctx, loopPts.slice(3), '#44403c');
+      ctx.save(); ctx.fillStyle = '#44403c'; ctx.fillRect(705, 234, 50, 34); ctx.restore();
+      if (I > 0) { for (let k = 0; k < 14; k++) { const p = polyPoint(loopPts, (flow + k * loopL / 14) % loopL); if (p.x > 430 && p.x < 610 && p.y < 200) continue; drawElectron(ctx, p.x, p.y, 4.5, 0.9); } }
+      // meter
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d6d3d1'; ctx.lineWidth = 1.5; roundRect(ctx, 430, 128, 180, 120, 12); ctx.fill(); ctx.stroke();
+      ctx.font = '700 10px Roboto Mono, monospace'; ctx.fillStyle = C.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('VOLTAGE (PUSH)', 446, 150); ctx.fillText('CURRENT (FLOW)', 446, 204);
+      ctx.font = '700 24px Roboto Mono, monospace'; ctx.fillStyle = C.volt; ctx.fillText(V.toFixed(1) + ' V', 446, 176);
+      ctx.fillStyle = C.amp; ctx.fillText(I.toFixed(2) + ' A', 446, 230);
       ctx.restore();
+      // fan
+      ctx.save(); ctx.strokeStyle = '#57534e'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(730, 234); ctx.lineTo(730, 120); ctx.stroke(); ctx.restore();
+      drawFan(ctx, 730, 108, 56, ang, I > 0);
+      drawPill(ctx, 'fan', 800, 184, C.muted, 12);
     }
-    xs.forEach((x, i) => cell(x, i));
-    // wiring
-    if (series) {
-      // connect - of one to + of next
-      for (let i = 0; i < 2; i++) {
-        drawWire(ctx, [{ x: xs[i] + cw - 12, y: cellY - 8 }, { x: xs[i] + cw - 12, y: 150 }, { x: xs[i + 1] + 12, y: 150 }, { x: xs[i + 1] + 12, y: cellY - 8 }], 1, C_WIRE);
-      }
-      // out leads
-      drawWire(ctx, [{ x: xs[0] + 12, y: cellY - 8 }, { x: xs[0] + 12, y: 150 }, { x: 220, y: 150 }, { x: 220, y: 400 }, { x: 1000, y: 400 }], 1, C_WIRE);
-      drawWire(ctx, [{ x: xs[2] + cw - 12, y: cellY - 8 }, { x: xs[2] + cw - 12, y: 150 }, { x: 980, y: 150 }, { x: 980, y: 400 }], 1, C_WIRE);
-    } else {
-      // all + together (top rail), all - together (bottom rail)
-      const railTop = 150, railBot = cellY + ch + 40;
-      xs.forEach(x => {
-        drawWire(ctx, [{ x: x + 12, y: cellY - 8 }, { x: x + 12, y: railTop }], 1, C_WIRE);
-        drawWire(ctx, [{ x: x + cw - 12, y: cellY + ch }, { x: x + cw - 12, y: railBot }], 1, C_WIRE);
-      });
-      drawWire(ctx, [{ x: xs[0] + 12, y: railTop }, { x: xs[2] + 12, y: railTop }, { x: 980, y: railTop }, { x: 980, y: 400 }], 1, C_WIRE);
-      drawWire(ctx, [{ x: xs[0] + cw - 12, y: railBot }, { x: xs[2] + cw - 12, y: railBot }, { x: 220, y: railBot }, { x: 220, y: 400 }, { x: 1000, y: 400 }], 1, C_WIRE);
-    }
-    // load motor
-    drawMotor(ctx, 1000, 400, 50, t * 0.02, 1);
-    // meters
-    const v = series ? 1.65 : 0.55;
-    const a = series ? 2.0 : 6.0;
-    drawMeter(ctx, 1110, 250, 360, 'Array voltage', v / 1.8, v.toFixed(2) + ' V', C_HOLE, false);
-    drawMeter(ctx, 1110, 360, 360, 'Array current', a / 6.5, a.toFixed(1) + ' A', C_ELECTRON, false);
-    // mode banner
-    ctx.fillStyle = series ? C_HOLE : C_ELECTRON;
-    ctx.font = '800 28px system-ui'; ctx.textAlign = 'left';
-    ctx.fillText(series ? 'SERIES → adds VOLTS' : 'PARALLEL → adds AMPS', 320, 520);
-  }
-};
-
-// =====================================================
-//  SCENE 9 — The Challenge (drifting sun, aim + wire)
-// =====================================================
-const PANEL9 = { x: 360, y: 440 };
-const scene9 = {
-  phase: 'Step 9: The Engineer Challenge',
-  phaseColor: C_OK,
-  isInteractive: true,
-  controls: {
-    aLabel: 'Aim at Sun', aClass: 'alt',
-    bLabel: 'Series ⇄ Parallel',
-    onA() { sceneLocal.aimX = sceneLocal.sunX; },
-    onB() { sceneLocal.series = !sceneLocal.series; }
-  },
-  notes: "Now you are the engineer. The sun is <strong>moving</strong>, so you must keep the panel <strong>aimed</strong> to capture the most light. Three jobs need three different outputs. Job A needs <strong>high voltage</strong>. Job B needs <strong>high current</strong>. Job C needs steady <strong>power</strong>. Configure the array to complete all three.",
-  notebook: "For each job, record the <strong>wiring</strong> (series or parallel) and the <strong>sunlight level</strong> that completed it. Write one sentence on why <strong>aiming the panel</strong> changed your current.",
-  setup() {
-    clearField();
-    sceneLocal = {
-      sunX: 800, aimX: 800, series: true, motorAngle: 0,
-      jobs: [
-        { id: 'A', label: 'Lift water uphill', need: 'high voltage', done: false },
-        { id: 'B', label: 'Max flow rate', need: 'high current', done: false },
-        { id: 'C', label: 'Steady charge', need: 'steady power', done: false }
-      ],
-      allDoneT: 0
+    currentTick = dt => {
+      t += dt;
+      const P = panelVolts(st.b) * panelAmps(st.b);
+      if (!REDUCED_MOTION) { ang += dt / 1000 * 16 * P / 3; flow += dt / 1000 * 220 * panelAmps(st.b); }
+      draw();
     };
-  },
-  update(dt) {
-    // sun drifts across sky
-    sceneLocal.sunX = 800 + Math.sin(animT / 3200) * 520;
-    const I = clamp(1 - Math.abs(sceneLocal.aimX - sceneLocal.sunX) / 520, 0.04, 1);
-    sceneLocal.intensity = I;
-    sceneLocal.motorAngle += I * dt * 0.02;
-    const v = sceneLocal.series ? 1.65 : 0.55;
-    const a = (sceneLocal.series ? 2.0 : 6.0) * I;
-    const p = v * a;
-    const J = sceneLocal.jobs;
-    if (sceneLocal.series && v >= 1.0 && a >= 0.6) J[0].done = true;
-    if (!sceneLocal.series && a >= 3.5) J[1].done = true;
-    if (p >= 1.6) J[2].done = true;
-    if (J.every(j => j.done)) sceneLocal.allDoneT += dt;
-  },
-  readout() {
-    const I = sceneLocal.intensity || 0;
-    const v = sceneLocal.series ? 1.65 : 0.55;
-    const a = (sceneLocal.series ? 2.0 : 6.0) * I;
-    return `Sun: <strong>${Math.round(I * 100)}%</strong> · <strong>${v.toFixed(2)} V</strong> · <strong>${a.toFixed(1)} A</strong>`;
-  },
-  draw(ctx, t) {
-    const I = sceneLocal.intensity;
-    const sunY = 120;
-    // panel tilt visual from aim offset
-    const skew = clamp((sceneLocal.aimX - PANEL9.x) / 8, -90, 90);
-    drawBeam(ctx, sceneLocal.sunX, sunY, PANEL9.x, PANEL9.y, 130, I);
-    const p = drawPanel(ctx, PANEL9.x, PANEL9.y, 250, 150, skew, I);
-    drawWire(ctx, [{ x: p.br.x, y: p.br.y }, { x: 620, y: 480 }, { x: 760, y: 480 }, { x: 760, y: 430 }], I, C_WIRE);
-    drawMotor(ctx, 760, 380, 50, sceneLocal.motorAngle, I);
-    // drifting sun (not grabbable; aim it instead)
-    drawSun(ctx, sceneLocal.sunX, sunY, 38, I, false);
-    ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.font = '600 13px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText('press Aim at Sun to track it', sceneLocal.sunX, sunY + 60);
-    // aim alignment hint line
-    ctx.save();
-    ctx.strokeStyle = `rgba(255,209,102,${0.15 + I * 0.4})`; ctx.lineWidth = 2; ctx.setLineDash([5, 6]);
-    ctx.beginPath(); ctx.moveTo(sceneLocal.aimX, sunY + 40); ctx.lineTo(PANEL9.x, PANEL9.y - 70); ctx.stroke();
-    ctx.setLineDash([]); ctx.restore();
-    // job cards
-    const jx = 960, jy = 160, jw = 460, jh = 92;
-    sceneLocal.jobs.forEach((job, i) => {
-      const y = jy + i * (jh + 16);
-      ctx.save();
-      const g = ctx.createLinearGradient(jx, y, jx, y + jh);
-      if (job.done) { g.addColorStop(0, 'rgba(74,222,128,0.22)'); g.addColorStop(1, 'rgba(34,120,70,0.18)'); }
-      else { g.addColorStop(0, 'rgba(40,46,66,0.9)'); g.addColorStop(1, 'rgba(20,24,38,0.9)'); }
-      ctx.fillStyle = g; roundRect(ctx, jx, y, jw, jh, 12); ctx.fill();
-      ctx.strokeStyle = job.done ? 'rgba(74,222,128,0.7)' : 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5;
-      roundRect(ctx, jx, y, jw, jh, 12); ctx.stroke();
-      // status dot
-      ctx.fillStyle = job.done ? C_OK : 'rgba(255,255,255,0.15)';
-      ctx.beginPath(); ctx.arc(jx + 34, y + jh / 2, 18, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = job.done ? '#0a2a14' : 'rgba(255,255,255,0.5)';
-      ctx.font = '900 20px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(job.done ? '✓' : job.id, jx + 34, y + jh / 2 + 1);
-      ctx.textAlign = 'left';
-      ctx.fillStyle = 'rgba(245,245,245,0.95)'; ctx.font = '700 18px system-ui';
-      ctx.fillText('Job ' + job.id + ': ' + job.label, jx + 66, y + 34);
-      ctx.fillStyle = job.done ? C_OK : 'rgba(160,160,160,0.9)'; ctx.font = '600 14px system-ui';
-      ctx.fillText('needs ' + job.need, jx + 66, y + 62);
-      ctx.restore();
+    draw();
+  }
+});
+
+// ---- Open the black box ----
+const LAYERS = [
+  { id: 'glass', name: 'Glass cover', h: 26, fill: '#e0f2fe', stroke: '#7dd3fc', job: 'protects the cell from weather and lets light through.' },
+  { id: 'coat', name: 'Anti-reflective coating', h: 10, fill: '#1e3a8a', stroke: '#1e3a8a', job: 'a thin film that keeps light from bouncing off, so more of it gets in.' },
+  { id: 'fingers', name: 'Metal fingers', h: 14, fill: '#f8fafc', stroke: '#94a3b8', job: 'thin metal lines that collect freed electrons and send them into the wire. They also cast a little shade.' },
+  { id: 'n', name: 'n-type silicon', h: 30, fill: '#bfdbfe', stroke: '#60a5fa', job: 'a thin top layer of silicon with extra free electrons.' },
+  { id: 'p', name: 'p-type silicon', h: 64, fill: '#fecdd3', stroke: '#fb7185', job: 'a thicker layer of silicon with extra empty spots called holes.' },
+  { id: 'back', name: 'Back contact', h: 14, fill: '#94a3b8', stroke: '#64748b', job: 'a metal sheet on the bottom that brings electrons back to finish the circuit.' }
+];
+scenes.push({
+  heading: 'Open the Black Box',
+  seeLabel: 'Open the panel, then tap each layer',
+  notes: "<strong>A solar cell is a stack of thin layers.</strong> Glass protects it. An anti-reflective coating keeps light from bouncing off. Metal fingers collect the electrons. The heart is two slices of silicon: <strong>n-type</strong> on top and <strong>p-type</strong> below. A back contact closes the circuit. The boundary where n meets p is called the <strong>junction</strong>.",
+  notebook: "<strong>Before you open it</strong>, look at your sketch from Step 1. Then open the panel and tap every layer. <strong>Draw</strong> the six layers in order, top to bottom, and <strong>label</strong> each one's job. Circle anything your prediction got right.",
+  build(stage) {
+    const st = sceneState('layers', { open: false, seen: [], sel: null });
+    requireTask('open', 'Open the panel');
+    requireTask('layers', 'Tap all six layers');
+    setTask('open', st.open); setTask('layers', st.seen.length === LAYERS.length);
+    const { c, ctx } = makeCanvas(stage, 860, 330, 'A solar cell separated into its six layers');
+    const openBtn = el('button', { class: 'primary', html: ICON.box + ' Open the panel' });
+    const chips = LAYERS.map(L => el('button', { class: 'chip', 'aria-label': 'Show the ' + L.name }, L.name));
+    const chipRow = el('div', { class: 'tool-row' }, chips);
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'tool-row' }, [openBtn]), chipRow, status);
+    let k = st.open ? 1 : 0, opening = false, t = 0;
+    const drops = [];
+    function select(i) {
+      if (!st.open) return;
+      const L = LAYERS[i];
+      st.sel = L.id;
+      if (!st.seen.includes(L.id)) st.seen.push(L.id);
+      if (st.seen.length === LAYERS.length) setTask('layers', true);
+      sync(); persistWork();
+    }
+    function sync() {
+      openBtn.hidden = st.open; chipRow.hidden = !st.open;
+      chips.forEach((ch, i) => { ch.classList.toggle('active', st.sel === LAYERS[i].id); ch.classList.toggle('done', st.seen.includes(LAYERS[i].id)); });
+      const L = LAYERS.find(x => x.id === st.sel);
+      if (!st.open) status.textContent = 'Predict first, then open the panel.';
+      else if (L) status.innerHTML = `<strong>${L.name}:</strong> ${L.job}` + (st.seen.length === LAYERS.length ? '' : ` <span class="mono">(${st.seen.length} of 6)</span>`);
+      else status.textContent = 'Tap each layer to learn its job.';
+    }
+    chips.forEach((ch, i) => ch.addEventListener('click', () => select(i)));
+    openBtn.addEventListener('click', () => { opening = true; openBtn.disabled = true; });
+    function layout() {
+      const gap = 16 * smooth(k), total = LAYERS.reduce((s, L) => s + L.h, 0) + gap * 5;
+      let y = (330 - total) / 2 + 6;
+      return LAYERS.map(L => { const r = { ...L, y }; y += L.h + gap; return r; });
+    }
+    c.addEventListener('pointerdown', e => {
+      if (!st.open) return;
+      const p = canvasPos(c, e);
+      const i = layout().findIndex(L => p.y >= L.y - 8 && p.y <= L.y + L.h + 8 && p.x > 110);
+      if (i >= 0) select(i);
     });
-    if (sceneLocal.allDoneT > 0) {
+    const X0 = 130, X1 = 560;
+    function draw() {
+      ctx.clearRect(0, 0, 860, 330);
+      const rows = layout();
+      rows.forEach(L => {
+        ctx.save();
+        const on = st.sel === L.id;
+        if (L.id === 'fingers') {
+          ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(X0, L.y + L.h - 2); ctx.lineTo(X1, L.y + L.h - 2); ctx.stroke();
+          ctx.fillStyle = '#cbd5e1';
+          for (let x = X0 + 16; x < X1 - 10; x += 44) { ctx.fillRect(x, L.y, 9, L.h); }
+        } else {
+          ctx.fillStyle = L.fill; ctx.fillRect(X0, L.y, X1 - X0, L.h);
+          ctx.strokeStyle = L.stroke; ctx.lineWidth = 1; ctx.strokeRect(X0 + 0.5, L.y + 0.5, X1 - X0 - 1, L.h - 1);
+          if (L.id === 'n') for (let i = 0; i < 9; i++) drawElectron(ctx, X0 + 30 + i * 47, L.y + L.h / 2, 4.5, 0.6 + 0.4 * k);
+          if (L.id === 'p') for (let i = 0; i < 9; i++) drawHole(ctx, X0 + 30 + i * 47, L.y + L.h / 2 + (i % 2 ? 12 : -12), 5, 0.6 + 0.4 * k);
+        }
+        if (on) { ctx.strokeStyle = '#4f46e5'; ctx.lineWidth = 3; ctx.strokeRect(X0 - 4, L.y - 4, X1 - X0 + 8, L.h + 8); }
+        ctx.restore();
+      });
+      // closed: the black box sits over the stack
+      if (k < 1) {
+        const a = 1 - smooth(k);
+        const top = rows[0].y, bot = rows[rows.length - 1].y + rows[rows.length - 1].h;
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = '#1e293b'; roundRect(ctx, X0 - 8, top - 8, X1 - X0 + 16, bot - top + 16, 12); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = '700 44px Roboto Serif, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', (X0 + X1) / 2, (top + bot) / 2);
+        ctx.restore();
+        drops.forEach(d => drawPhoton(ctx, d.x, d.y, 0, 1, 560, a));
+      }
+      if (k > 0.6) {
+        const a = (k - 0.6) / 0.4;
+        ctx.save(); ctx.globalAlpha = a;
+        rows.forEach(L => {
+          const done = st.seen.includes(L.id), on = st.sel === L.id;
+          const col = on ? '#4f46e5' : done ? C.good : C.muted;
+          drawLeader(ctx, X1 + 6, L.y + L.h / 2, 620, L.y + L.h / 2, col);
+          drawPill(ctx, L.name, 622, L.y + L.h / 2, col, 13, 'left');
+        });
+        const n = rows[3], p = rows[4];
+        const jy = (n.y + n.h + p.y) / 2;
+        ctx.strokeStyle = rgba(C.field, 0.8); ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(X0 - 60, jy); ctx.lineTo(X0 - 6, jy); ctx.stroke(); ctx.setLineDash([]);
+        drawPill(ctx, 'junction', X0 - 66, jy, C.field, 12, 'right');
+        ctx.restore();
+      }
+    }
+    currentTick = dt => {
+      t += dt;
+      if (opening) { k = REDUCED_MOTION ? 1 : Math.min(1, k + dt / 1200); if (k >= 1) { opening = false; st.open = true; finishTask('open'); sync(); persistWork(); } }
+      if (!st.open && !REDUCED_MOTION) {
+        if (Math.random() < 0.08) drops.push({ x: 150 + Math.random() * 390, y: 0 });
+        drops.forEach(d => d.y += dt * 0.16);
+        const top = layout()[0].y - 8;
+        for (let i = drops.length - 1; i >= 0; i--) if (drops[i].y > top) drops.splice(i, 1);
+      }
+      draw();
+    };
+    sync(); draw();
+  }
+});
+
+// ---- Light frees an electron (the photoelectric effect) ----
+scenes.push({
+  heading: 'Light Frees an Electron',
+  seeLabel: 'Fire photons at silicon',
+  notes: "<strong>A photon can knock one electron loose from silicon, but only if it carries at least 1.1 eV of energy.</strong> Silicon's outer electrons are locked in bonds between atoms. A freed electron can move, and it leaves behind a <strong>hole</strong>. Brighter light means more photons, not stronger ones. This is the <strong>photoelectric effect</strong>. In a solar cell the electron stays inside the silicon.",
+  notebook: "<strong>Predict first:</strong> will ten weak infrared photons free an electron when one can't? Write yes or no and why. Then test it. <strong>Record</strong> the wavelength, the energy, and freed or not freed for three photons you fire. Use <strong>E = 1240 ÷ wavelength</strong>.",
+  build(stage) {
+    const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false });
+    requireTask('free', 'Free an electron with one photon');
+    requireTask('miss', 'Fire a photon with less than 1.1 eV');
+    requireTask('ten', 'Fire ten photons with less than 1.1 eV at once');
+    setTask('free', st.free); setTask('miss', st.miss); setTask('ten', st.ten);
+    const scene = current;
+    const { ctx } = makeCanvas(stage, 860, 330, 'Silicon atoms held together by bonds of shared outer electrons, with photons arriving');
+    const range = el('input', { type: 'range', min: 400, max: 1400, step: 10, value: st.nm, 'aria-label': 'Photon wavelength in nanometers' });
+    const val = el('span', { class: 'val' });
+    const one = el('button', { class: 'primary', html: ICON.zap + ' Fire one photon' });
+    const ten = el('button', {}, 'Fire ten photons');
+    const reset = el('button', { html: ICON.reset + ' Reset the silicon' });
+    const formula = el('p', { class: 'status-line' });
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'slider-row' }, [el('label', {}, 'Wavelength'), range, val]), formula, el('div', { class: 'tool-row' }, [one, ten, reset]), status);
+    // lattice
+    const atoms = [];
+    for (let r = 0; r < 3; r++) for (let cc = 0; cc < 5; cc++) atoms.push({ x: 300 + 110 * cc, y: 80 + 90 * r });
+    let bonds = [], free = [], photons = [], heat = [];
+    function buildBonds() {
+      bonds = [];
+      for (let r = 0; r < 3; r++) for (let cc = 0; cc < 5; cc++) {
+        const a = atoms[r * 5 + cc];
+        if (cc < 4) { const b = atoms[r * 5 + cc + 1]; bonds.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, mx: (a.x + b.x) / 2, my: a.y, h: true, hole: false }); }
+        if (r < 2) { const b = atoms[(r + 1) * 5 + cc]; bonds.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, mx: a.x, my: (a.y + b.y) / 2, h: false, hole: false }); }
+      }
+      free = []; photons = []; heat = [];
+    }
+    buildBonds();
+    const dotPos = (b, i) => b.h ? { x: b.mx + (i ? 8 : -8), y: b.my } : { x: b.mx, y: b.my + (i ? 8 : -8) };
+    function update() {
+      const E = photonEV(st.nm);
+      val.textContent = st.nm + ' nm, ' + bandName(st.nm);
+      formula.innerHTML = `E = 1240 ÷ ${st.nm} = <span class="mono">${E.toFixed(2)} eV</span>` + (E >= BAND_GAP ? ' (enough to free an electron)' : ' (less than 1.1 eV)');
+      persistWork();
+    }
+    range.addEventListener('input', () => { st.nm = +range.value; update(); });
+    let batch = null;
+    function fire(n) {
+      const intact = bonds.filter(b => !b.hole && !b.targeted);
+      if (intact.length < n) { buildBonds(); return fire(n); }
+      for (let i = intact.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [intact[i], intact[j]] = [intact[j], intact[i]]; }
+      batch = { n, left: n, nm: st.nm, freed: 0 };
+      for (let i = 0; i < n; i++) {
+        const b = intact[i]; b.targeted = true;
+        const tx = dotPos(b, 0).x, ty = dotPos(b, 0).y;
+        photons.push({ b, tx, ty, sx: tx - 150, sy: ty - 150, p: -i * 0.12, nm: st.nm, batch });
+      }
+      status.textContent = n === 1 ? 'Photon on its way...' : 'Ten photons on their way...';
+    }
+    one.addEventListener('click', () => fire(1));
+    ten.addEventListener('click', () => fire(10));
+    reset.addEventListener('click', () => { buildBonds(); status.textContent = 'The silicon is back to all bonds intact.'; });
+    function land(ph) {
+      const b = ph.b, E = photonEV(ph.nm), bt = ph.batch;
+      b.targeted = false;
+      if (E >= BAND_GAP) {
+        b.hole = true; bt.freed++;
+        const d = dotPos(b, 0), ang = Math.random() * Math.PI * 2;
+        free.push({ x: d.x, y: d.y, vx: Math.cos(ang) * 60, vy: Math.sin(ang) * 60 });
+        if (E - BAND_GAP >= 0.05) heat.push({ x: b.mx, y: b.my - 22, life: 1, text: '+' + (E - BAND_GAP).toFixed(2) + ' eV heat' });
+      }
+      bt.left--;
+      if (bt.left === 0) finishBatch(bt);
+    }
+    function finishBatch(bt) {
+      if (scene !== current) return;
+      const E = photonEV(bt.nm);
+      if (bt.n === 1) {
+        if (bt.freed) { finishTask('free', scene); status.innerHTML = `One photon, one electron freed. It carried <span class="mono">${E.toFixed(2)} eV</span>, so <span class="mono">${(E - BAND_GAP).toFixed(2)} eV</span> became heat.`; }
+        else { finishTask('miss', scene); status.innerHTML = `The <span class="mono">${E.toFixed(2)} eV</span> photon passed straight through. Nothing was freed.`; }
+      } else {
+        if (bt.freed) status.textContent = `Ten photons freed ${bt.freed} electrons. One photon frees one electron.`;
+        else { finishTask('ten', scene); status.innerHTML = `Ten <span class="mono">${E.toFixed(2)} eV</span> photons, zero electrons freed. More photons do not make each one stronger.`; }
+      }
+    }
+    function draw() {
+      ctx.clearRect(0, 0, 860, 330);
+      // energy bar
+      const E = photonEV(st.nm), y0 = 300, scale = 240 / 3.2;
       ctx.save();
-      ctx.fillStyle = `rgba(74,222,128,${clamp(sceneLocal.allDoneT / 600, 0, 1)})`;
-      ctx.font = '800 26px system-ui'; ctx.textAlign = 'center';
-      ctx.fillText('All jobs complete. You optimized the array.', 760, 580);
+      ctx.fillStyle = '#f5f5f4'; roundRect(ctx, 62, y0 - 240, 34, 240, 8); ctx.fill();
+      ctx.fillStyle = wlColor(st.nm, 0.85); roundRect(ctx, 62, y0 - E * scale, 34, E * scale, 8); ctx.fill();
+      const ty = y0 - BAND_GAP * scale;
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(54, ty); ctx.lineTo(104, ty); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = C.ink; ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('silicon needs', 110, ty - 8); ctx.fillText('1.1 eV', 110, ty + 8);
+      ctx.fillStyle = C.muted; ctx.font = '700 10px Roboto Mono, monospace'; ctx.textAlign = 'center';
+      ctx.fillText('PHOTON', 79, 30); ctx.fillText('ENERGY', 79, 44);
+      ctx.fillStyle = C.ink; ctx.font = '700 13px Roboto Mono, monospace'; ctx.fillText(E.toFixed(2) + ' eV', 79, 318);
+      ctx.restore();
+      // bonds + atoms
+      bonds.forEach(b => {
+        ctx.strokeStyle = '#e7e5e4'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke();
+      });
+      atoms.forEach(a => drawAtom(ctx, a.x, a.y, 'Si'));
+      bonds.forEach(b => {
+        const d0 = dotPos(b, 0), d1 = dotPos(b, 1);
+        if (b.hole) drawHole(ctx, d0.x, d0.y, 6); else drawDot(ctx, d0.x, d0.y, C.valence);
+        drawDot(ctx, d1.x, d1.y, C.valence);
+      });
+      free.forEach(f => drawElectron(ctx, f.x, f.y, 7));
+      photons.forEach(ph => {
+        if (ph.p < 0) return;
+        const k = ph.p, x = lerp(ph.sx, ph.tx, k), y = lerp(ph.sy, ph.ty, k);
+        drawPhoton(ctx, x, y, ph.tx - ph.sx, ph.ty - ph.sy, ph.nm, ph.p > 1 ? Math.max(0, 2 - ph.p) : 1);
+      });
+      heat.forEach(h => { ctx.save(); ctx.globalAlpha = Math.min(1, h.life * 1.5); drawPill(ctx, h.text, h.x, h.y, C.heat, 11); ctx.restore(); });
+      ctx.save(); ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      drawDot(ctx, 262, 316, C.valence); ctx.fillStyle = C.muted; ctx.fillText('electron in a bond', 272, 316);
+      drawElectron(ctx, 420, 316, 6); ctx.fillStyle = C.muted; ctx.fillText('free electron', 432, 316);
+      drawHole(ctx, 546, 316, 6); ctx.fillStyle = C.muted; ctx.fillText('hole', 558, 316);
       ctx.restore();
     }
-  }
-};
-
-// =====================================================
-//  SCENE 10 — Summary + Real Lab
-// =====================================================
-const scene10 = {
-  phase: 'Step 10: Build It For Real',
-  phaseColor: C_SUN,
-  notes: "Here is the whole story. <strong>Photons</strong> hit silicon and free <strong>electrons</strong> (the photoelectric effect). The <strong>p-n junction</strong> pushes them one way as <strong>DC current</strong>. <strong>Voltage</strong> is set by the silicon; <strong>current</strong> grows with light. Wire cells in <strong>series</strong> for volts or <strong>parallel</strong> for amps to match the job.",
-  notebook: "Write a four line summary: (1) how one cell works, (2) what sets voltage vs current, (3) series vs parallel, (4) your data from the challenge. Then <strong>get copper foil, salt water, and a multimeter from Eric</strong> and build a real photocell. Measure its voltage in sun and in shade.",
-  setup() { clearField(); sceneLocal = { photons: [] }; },
-  update(dt) {
-    if (Math.random() < 0.3) sceneLocal.photons.push({ x: 120, y: 120 + Math.random() * 60, p: 0 });
-    sceneLocal.photons.forEach(ph => ph.p += dt / 1000 * 0.5);
-    sceneLocal.photons = sceneLocal.photons.filter(ph => ph.p < 1);
-  },
-  draw(ctx, t) {
-    // top: recap flow chain
-    const steps = [
-      { t: 'Photon', c: '255, 209, 102' },
-      { t: 'Free electron', c: '92, 201, 255' },
-      { t: 'Junction push', c: '74, 222, 128' },
-      { t: 'DC current', c: '125, 211, 252' },
-      { t: 'Work', c: '99, 102, 241' }
-    ];
-    const y = 130, x0 = 160, gap = 270;
-    steps.forEach((s, i) => {
-      const x = x0 + i * gap;
-      ctx.save();
-      const g = ctx.createLinearGradient(x - 80, y - 26, x + 80, y + 26);
-      g.addColorStop(0, `rgba(${s.c},0.9)`); g.addColorStop(1, `rgba(${s.c},0.45)`);
-      ctx.fillStyle = g; ctx.shadowColor = `rgba(${s.c},0.4)`; ctx.shadowBlur = 18;
-      roundRect(ctx, x - 90, y - 26, 180, 52, 14); ctx.fill(); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#0a0a0a'; ctx.font = '700 16px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(s.t, x, y + 1);
-      ctx.restore();
-      if (i < steps.length - 1) {
-        const ax = x + 90, bx = x + gap - 90;
-        const grd = ctx.createLinearGradient(ax, y, bx, y);
-        grd.addColorStop(0, `rgba(${s.c},0.8)`); grd.addColorStop(1, `rgba(${steps[i + 1].c},0.8)`);
-        ctx.strokeStyle = grd; ctx.lineWidth = 3; ctx.beginPath();
-        ctx.moveTo(ax, y); ctx.lineTo(bx - 8, y); ctx.stroke();
-        ctx.fillStyle = `rgba(${steps[i + 1].c},0.8)`;
-        ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx - 10, y - 6); ctx.lineTo(bx - 10, y + 6); ctx.closePath(); ctx.fill();
+    currentTick = dt => {
+      const s = dt / 1000;
+      for (let i = photons.length - 1; i >= 0; i--) {
+        const ph = photons[i], was = ph.p;
+        ph.p += s * (REDUCED_MOTION ? 5 : 1.6);
+        if (was < 1 && ph.p >= 1) {
+          land(ph);
+          if (frees(ph.nm)) { photons.splice(i, 1); continue; }
+        }
+        if (ph.p >= 2) photons.splice(i, 1);
       }
+      free.forEach(f => {
+        if (Math.random() < 0.03) { const a = Math.random() * Math.PI * 2; f.vx = Math.cos(a) * 60; f.vy = Math.sin(a) * 60; }
+        f.x += f.vx * s; f.y += f.vy * s;
+        if (f.x < 270 || f.x > 770) f.vx *= -1; if (f.y < 55 || f.y > 290) f.vy *= -1;
+        f.x = clamp(f.x, 270, 770); f.y = clamp(f.y, 55, 290);
+      });
+      heat.forEach(h => { h.life -= s / 1.6; h.y -= s * 12; });
+      heat = heat.filter(h => h.life > 0);
+      draw();
+    };
+    update(); draw();
+  }
+});
+
+// ---- Holes move too (empty seat analogy) ----
+const PEOPLE = ['#fca5a5', '#fdba74', '#86efac', '#93c5fd', '#fcd34d', '#f9a8d4', '#67e8f9', '#d6d3d1'];
+scenes.push({
+  heading: 'Holes Move Too',
+  seeLabel: 'Slide people into the empty seat',
+  notes: "<strong>A hole is a missing electron, and it can move.</strong> When a neighbor electron hops into a hole, the hole jumps to where that electron was. Picture a full row with one empty seat: as each person slides over one seat, the empty seat travels the other way. Electrons drift one way, holes drift the other, and both carry current.",
+  notebook: "<strong>Predict first:</strong> if people keep sliding right, which way will the empty seat travel? Then move it to the far left end. <strong>Draw</strong> the row before and after, with an arrow for the people and an arrow for the empty seat.",
+  build(stage) {
+    const st = sceneState('seats', { e: 7, order: [0, 1, 2, 3, 4, 5, 6, -1], moves: 0 });
+    requireTask('far', 'Move the empty seat to the far left end');
+    setTask('far', st.e === 0);
+    const scene = current;
+    const { c, ctx } = makeCanvas(stage, 860, 320, 'A row of eight seats with one empty seat, above a matching row of silicon bonds with one hole');
+    const slide = el('button', { class: 'primary' }, 'Slide the next person over');
+    const reset = el('button', { html: ICON.reset + ' Reset the row' });
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'tool-row' }, [slide, reset]), status);
+    const X = i => 150 + 80 * i;
+    let anim = null;
+    function sync() {
+      slide.disabled = st.e === 0 || !!anim;
+      status.innerHTML = st.e === 0
+        ? `The empty seat reached the far left after <span class="mono">${st.moves}</span> moves. Every person moved one seat to the right.`
+        : st.moves === 0 ? 'Tap the person next to the empty seat, or use the button.'
+        : `Empty seat is now seat <span class="mono">${st.e + 1}</span> of 8. People have slid right <span class="mono">${st.moves}</span> times.`;
+    }
+    function move(j) {
+      if (anim || j < 0 || j > 7 || Math.abs(j - st.e) !== 1) return;
+      anim = { from: j, to: st.e, who: st.order[j], k: 0 };
+      sync();
+    }
+    slide.addEventListener('click', () => move(st.e - 1));
+    reset.addEventListener('click', () => { if (anim) return; st.e = 7; st.order = [0, 1, 2, 3, 4, 5, 6, -1]; st.moves = 0; setTask('far', false); persistWork(); sync(); });
+    c.addEventListener('pointerdown', e => {
+      const p = canvasPos(c, e);
+      const j = Math.round((p.x - 150) / 80);
+      if (p.y > 40 && p.y < 290) move(j);
     });
-    // bottom: real lab call-to-action with copper/saltwater sketch
-    const bx = 120, by = 250, bw = W - 240, bh = 340;
-    ctx.save();
-    const g = ctx.createLinearGradient(bx, by, bx, by + bh);
-    g.addColorStop(0, 'rgba(255,209,102,0.10)'); g.addColorStop(1, 'rgba(255,183,3,0.04)');
-    ctx.fillStyle = g; roundRect(ctx, bx, by, bw, bh, 18); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,209,102,0.4)'; ctx.lineWidth = 2; roundRect(ctx, bx, by, bw, bh, 18); ctx.stroke();
-    ctx.restore();
-    // beaker sketch (left)
-    const cx = 360, cyTop = 330, cyBot = 540, cwid = 200;
-    ctx.save();
-    // photons hitting beaker
-    sceneLocal.photons.forEach(ph => {
-      const x = lerp(120, cx - 40, smooth(ph.p));
-      const yy = lerp(ph.y, 380, smooth(ph.p));
-      ctx.fillStyle = C_PHOTON; ctx.shadowColor = C_SUN; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.arc(x, yy, 4, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    function person(x, y, col) {
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y - 30, 11, 0, Math.PI * 2); ctx.fill();
+      roundRect(ctx, x - 15, y - 16, 30, 26, 9); ctx.fill();
+    }
+    function draw() {
+      ctx.clearRect(0, 0, 860, 320);
+      ctx.save(); ctx.fillStyle = C.muted; ctx.font = '700 11px Roboto Mono, monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText('A FULL ROW WITH ONE EMPTY SEAT', 110, 26); ctx.fillText('THE SAME IDEA IN SILICON', 110, 186); ctx.restore();
+      const k = anim ? smooth(anim.k) : 0;
+      for (let i = 0; i < 8; i++) {
+        ctx.fillStyle = '#e7e5e4'; roundRect(ctx, X(i) - 24, 110, 48, 16, 5); ctx.fill(); ctx.fillRect(X(i) - 24, 70, 8, 44);
+        ctx.fillStyle = i === st.e && !anim ? rgba(C.hole, 0.08) : 'transparent';
+      }
+      // people
+      st.order.forEach((who, i) => {
+        if (who < 0) return;
+        if (anim && i === anim.from) return;
+        person(X(i), 108, PEOPLE[who]);
+      });
+      if (anim) person(lerp(X(anim.from), X(anim.to), k), 108, PEOPLE[anim.who]);
+      const emptyAt = anim ? anim.from : st.e;
+      if (!anim) { ctx.save(); ctx.strokeStyle = C.hole; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.5; roundRect(ctx, X(emptyAt) - 28, 58, 56, 74, 8); ctx.stroke(); ctx.restore(); drawPill(ctx, 'empty seat', X(emptyAt), 150, C.hole, 11); }
+      // silicon row
+      ctx.strokeStyle = '#e7e5e4'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(110, 240); ctx.lineTo(750, 240); ctx.stroke();
+      for (let i = 0; i < 9; i++) drawAtom(ctx, 110 + 80 * i, 240, 'Si', 15);
+      st.order.forEach((who, i) => {
+        if (who < 0 || (anim && i === anim.from)) return;
+        drawElectron(ctx, X(i), 240, 7);
+      });
+      if (anim) drawElectron(ctx, lerp(X(anim.from), X(anim.to), k), 240, 7);
+      if (!anim) drawHole(ctx, X(st.e), 240, 8);
+      if (st.moves > 0) {
+        const arrow = (x1, x2, y, col, text) => {
+          ctx.save(); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 2.5;
+          ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+          const d = Math.sign(x2 - x1); ctx.beginPath(); ctx.moveTo(x2, y); ctx.lineTo(x2 - d * 10, y - 6); ctx.lineTo(x2 - d * 10, y + 6); ctx.closePath(); ctx.fill();
+          ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, (x1 + x2) / 2, y - 12);
+          ctx.restore();
+        };
+        arrow(300, 420, 290, C.electron, 'electrons move right');
+        arrow(560, 440, 290, C.hole, 'hole moves left');
+      }
+    }
+    currentTick = dt => {
+      if (anim) {
+        anim.k += REDUCED_MOTION ? 1 : dt / 320;
+        if (anim.k >= 1) {
+          st.order[anim.to] = anim.who; st.order[anim.from] = -1; st.e = anim.from; st.moves++;
+          anim = null;
+          if (st.e === 0) finishTask('far', scene);
+          persistWork(); sync();
+        }
+      }
+      draw();
+    };
+    sync(); draw();
+  }
+});
+
+// ---- Make n-type and p-type (doping) ----
+scenes.push({
+  heading: 'Make n-type and p-type',
+  seeLabel: 'Swap in phosphorus or boron atoms',
+  notes: "<strong>Engineers add a few other atoms to silicon. This is called doping.</strong> Silicon has 4 outer electrons. <strong>Phosphorus</strong> has 5, so it brings one extra free electron: <strong>n-type</strong>. <strong>Boron</strong> has 3, so it leaves a hole: <strong>p-type</strong>. Both slabs stay neutral, because every atom brings as many protons as electrons.",
+  notebook: "<strong>Predict first:</strong> will n-type silicon have a negative charge overall? Write your guess. Then dope both slabs and read the net charge. <strong>Draw</strong> one phosphorus atom and one boron atom with their outer electrons, and circle the extra electron and the hole.",
+  build(stage) {
+    const st = sceneState('dope', { left: Array(12).fill('Si'), right: Array(12).fill('Si'), dop: 'P' });
+    requireTask('n', 'Make the left slab n-type (2 or more phosphorus, no boron)');
+    requireTask('p', 'Make the right slab p-type (2 or more boron, no phosphorus)');
+    const { c, ctx } = makeCanvas(stage, 860, 330, 'Two slabs of silicon atoms that can be doped with phosphorus or boron');
+    const chipP = el('button', { class: 'chip', 'aria-pressed': 'false' }, 'Phosphorus (5 outer electrons)');
+    const chipB = el('button', { class: 'chip', 'aria-pressed': 'false' }, 'Boron (3 outer electrons)');
+    const addL = el('button', {}, 'Add to left slab');
+    const addR = el('button', {}, 'Add to right slab');
+    const clear = el('button', { html: ICON.reset + ' Clear both' });
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'tool-row' }, [chipP, chipB]), el('div', { class: 'tool-row' }, [addL, addR, clear]), status);
+    const pos = (side, i) => ({ x: (side === 'left' ? 110 : 500) + 90 * (i % 4), y: 100 + 80 * Math.floor(i / 4) });
+    const count = (arr, k) => arr.filter(x => x === k).length;
+    function evaluate() {
+      const nOK = count(st.left, 'P') >= 2 && count(st.left, 'B') === 0;
+      const pOK = count(st.right, 'B') >= 2 && count(st.right, 'P') === 0;
+      setTask('n', nOK); setTask('p', pOK);
+      chipP.classList.toggle('active', st.dop === 'P'); chipB.classList.toggle('active', st.dop === 'B');
+      chipP.setAttribute('aria-pressed', String(st.dop === 'P')); chipB.setAttribute('aria-pressed', String(st.dop === 'B'));
+      let msg;
+      if (count(st.left, 'B')) msg = 'The left slab has boron. Boron adds holes, so it cannot make n-type.';
+      else if (count(st.right, 'P')) msg = 'The right slab has phosphorus. Phosphorus adds free electrons, so it cannot make p-type.';
+      else if (nOK && pOK) msg = 'Left slab is n-type and right slab is p-type. Both are still neutral.';
+      else msg = 'Pick an atom, then tap silicon atoms in a slab to swap them.';
+      status.textContent = msg;
+      persistWork();
+    }
+    function toggle(side, i) {
+      const arr = st[side];
+      arr[i] = arr[i] === st.dop ? 'Si' : st.dop;
+      evaluate();
+    }
+    chipP.addEventListener('click', () => { st.dop = 'P'; evaluate(); });
+    chipB.addEventListener('click', () => { st.dop = 'B'; evaluate(); });
+    const addNext = side => { const i = st[side].indexOf('Si'); if (i >= 0) toggle(side, [5, 2, 9, 0, 7, 10, 3, 4, 8, 1, 6, 11].find(j => st[side][j] === 'Si') ?? i); };
+    addL.addEventListener('click', () => addNext('left'));
+    addR.addEventListener('click', () => addNext('right'));
+    clear.addEventListener('click', () => { st.left = Array(12).fill('Si'); st.right = Array(12).fill('Si'); evaluate(); });
+    c.addEventListener('pointerdown', e => {
+      const p = canvasPos(c, e);
+      for (const side of ['left', 'right']) for (let i = 0; i < 12; i++) { const q = pos(side, i); if (Math.hypot(p.x - q.x, p.y - q.y) < 26) return toggle(side, i); }
     });
-    // glass
-    ctx.strokeStyle = 'rgba(200,220,230,0.7)'; ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(cx - cwid / 2, cyTop); ctx.lineTo(cx - cwid / 2, cyBot);
-    ctx.quadraticCurveTo(cx - cwid / 2, cyBot + 18, cx - cwid / 2 + 18, cyBot + 18);
-    ctx.lineTo(cx + cwid / 2 - 18, cyBot + 18);
-    ctx.quadraticCurveTo(cx + cwid / 2, cyBot + 18, cx + cwid / 2, cyBot);
-    ctx.lineTo(cx + cwid / 2, cyTop); ctx.stroke();
-    // salt water
-    const sw = ctx.createLinearGradient(0, 400, 0, cyBot);
-    sw.addColorStop(0, 'rgba(94,234,212,0.5)'); sw.addColorStop(1, 'rgba(45,150,160,0.6)');
-    ctx.fillStyle = sw;
-    roundRect(ctx, cx - cwid / 2 + 4, 400, cwid - 8, cyBot - 400 + 14, 6); ctx.fill();
-    // two copper plates
-    ctx.fillStyle = '#c87f4a'; ctx.fillRect(cx - 46, 360, 14, 150);
-    ctx.fillStyle = '#7a4a2a'; ctx.fillRect(cx + 32, 360, 14, 150); // flamed cuprous oxide plate
-    ctx.fillStyle = 'rgba(245,245,245,0.7)'; ctx.font = '600 12px system-ui'; ctx.textAlign = 'center';
-    ctx.fillText('copper', cx - 39, 350); ctx.fillText('CuO plate', cx + 39, 350);
-    ctx.fillText('salt water', cx, cyBot - 14);
-    // multimeter
-    drawWire(ctx, [{ x: cx - 39, y: 360 }, { x: cx - 39, y: 300 }, { x: 560, y: 300 }, { x: 560, y: 360 }], 0, C_WIRE);
-    drawWire(ctx, [{ x: cx + 39, y: 360 }, { x: cx + 39, y: 320 }, { x: 660, y: 320 }, { x: 660, y: 360 }], 0, C_WIRE);
-    ctx.fillStyle = '#1b1f2a'; roundRect(ctx, 540, 360, 160, 110, 10); ctx.fill();
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; roundRect(ctx, 540, 360, 160, 110, 10); ctx.stroke();
-    ctx.fillStyle = '#0a2a14'; roundRect(ctx, 556, 376, 128, 50, 6); ctx.fill();
-    ctx.fillStyle = C_OK; ctx.font = '800 26px ui-monospace, monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText((0.30 + 0.25 * (0.5 + 0.5 * Math.sin(t / 700))).toFixed(2) + ' V', 620, 401);
-    ctx.fillStyle = 'rgba(245,245,245,0.6)'; ctx.font = '600 12px system-ui';
-    ctx.fillText('multimeter', 620, 458);
+    let t = 0;
+    function slabType(arr) { const P = count(arr, 'P'), B = count(arr, 'B'); return P && B ? 'mixed' : P ? 'n-type' : B ? 'p-type' : 'pure silicon'; }
+    function draw() {
+      ctx.clearRect(0, 0, 860, 330);
+      ['left', 'right'].forEach(side => {
+        const arr = st[side], type = slabType(arr), x0 = side === 'left' ? 70 : 460;
+        ctx.save();
+        ctx.fillStyle = type === 'n-type' ? rgba(C.electron, 0.07) : type === 'p-type' ? rgba(C.hole, 0.07) : '#fafaf9';
+        ctx.strokeStyle = '#e7e5e4'; ctx.lineWidth = 1.5; roundRect(ctx, x0, 50, 350, 228, 14); ctx.fill(); ctx.stroke();
+        ctx.restore();
+        const col = type === 'n-type' ? C.electron : type === 'p-type' ? C.hole : C.muted;
+        drawPill(ctx, (side === 'left' ? 'Left slab: ' : 'Right slab: ') + type, x0 + 175, 30, col, 12);
+        // bonds
+        ctx.strokeStyle = '#e7e5e4'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        for (let i = 0; i < 12; i++) { const a = pos(side, i); if (i % 4 < 3) { const b = pos(side, i + 1); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } if (i < 8) { const b = pos(side, i + 4); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); } }
+        arr.forEach((kind, i) => {
+          const q = pos(side, i);
+          drawAtom(ctx, q.x, q.y, kind, kind);
+          const n = kind === 'B' ? 3 : 4;
+          const angs = [-Math.PI / 4, Math.PI / 4, 3 * Math.PI / 4, -3 * Math.PI / 4];
+          for (let d = 0; d < 4; d++) {
+            const x = q.x + Math.cos(angs[d]) * 27, y = q.y + Math.sin(angs[d]) * 27;
+            if (d < n) drawDot(ctx, x, y, C.valence, 3.5); else drawHole(ctx, x, y, 6);
+          }
+          if (kind === 'P') { const a = t / 600 + i; drawElectron(ctx, q.x + Math.cos(a) * 36, q.y + Math.sin(a) * 36, 6); }
+        });
+        const P = count(arr, 'P'), B = count(arr, 'B');
+        ctx.save(); ctx.fillStyle = C.ink; ctx.font = '600 13px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`free electrons ${P}  ·  holes ${B}  ·  net charge 0`, x0 + 175, 300);
+        ctx.restore();
+      });
+      ctx.save(); ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      drawDot(ctx, 300, 322, C.valence, 3.5); ctx.fillStyle = C.muted; ctx.fillText('outer electron', 308, 322);
+      drawElectron(ctx, 420, 322, 5); ctx.fillText('extra free electron', 430, 322);
+      drawHole(ctx, 562, 322, 5); ctx.fillText('hole', 572, 322);
+      ctx.restore();
+    }
+    currentTick = dt => { if (!REDUCED_MOTION) t += dt; draw(); };
+    evaluate(); draw();
+  }
+});
+
+// ---- Where the layers meet (the p-n junction) ----
+scenes.push({
+  heading: 'Where the Layers Meet',
+  seeLabel: 'Drag the n-type slab to touch the p-type slab',
+  notes: "<strong>When n-type and p-type touch, a one-way push forms at the junction.</strong> Free electrons near the border cross over and fill holes. That leaves fixed charges behind: plus on the n side, minus on the p side. Those charges make an <strong>electric field</strong> that works like a hill. Electrons roll down to the n side. Holes float up to the p side.",
+  notebook: "<strong>Predict first:</strong> when the slabs touch, which way will the free electrons move? Then join them. <strong>Draw</strong> the junction with its plus and minus charges, and add an arrow showing which way the field pushes a free electron.",
+  build(stage) {
+    const st = sceneState('junction', { joined: false, hill: false });
+    requireTask('join', 'Join the n-type and p-type slabs');
+    requireTask('hill', 'Show the energy hill');
+    setTask('join', st.joined); setTask('hill', st.hill);
+    const scene = current;
+    const { c, ctx } = makeCanvas(stage, 860, 360, 'An n-type slab and a p-type slab that form a junction when they touch');
+    const joinBtn = el('button', { class: 'primary' }, 'Join the slabs');
+    const hillBtn = el('button', { 'aria-pressed': String(st.hill) }, 'Show the energy hill');
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'tool-row' }, [joinBtn, hillBtn]), status);
+    const SLAB_W = 300, PX = 430, JOIN_X = PX - SLAB_W, START_X = 50, Y0 = 44, H = 170;
+    const rnd = seeded(7);
+    let nX = st.joined ? JOIN_X : START_X, sliding = false, phase = st.joined ? 'done' : 'apart', dk = 0, t = 0;
+    let electrons = Array.from({ length: 12 }, () => ({ rx: 20 + rnd() * 260, y: Y0 + 20 + rnd() * (H - 40) }));
+    let holes = Array.from({ length: 12 }, () => ({ x: PX + 20 + rnd() * 260, y: Y0 + 20 + rnd() * (H - 40) }));
+    const ionYs = [Y0 + 30, Y0 + 70, Y0 + 110, Y0 + 150];
+    let movers = [];
+    function settle() {
+      electrons.sort((a, b) => b.rx - a.rx); holes.sort((a, b) => a.x - b.x);
+      movers = ionYs.map((y, i) => ({ e: electrons[i], h: holes[i], ty: y, ex0: electrons[i].rx, ey0: electrons[i].y }));
+      electrons = electrons.slice(4); holes = holes.slice(4);
+      electrons.forEach(e => e.rx = Math.min(e.rx, 240)); holes.forEach(h => h.x = Math.max(h.x, PX + 50));
+    }
+    if (st.joined) { settle(); movers = []; }
+    function sync() {
+      joinBtn.disabled = phase !== 'apart';
+      hillBtn.disabled = phase !== 'done';
+      hillBtn.textContent = st.hill ? 'Hide the energy hill' : 'Show the energy hill';
+      hillBtn.setAttribute('aria-pressed', String(st.hill));
+      status.textContent = phase === 'apart' ? 'Drag the n-type slab until it touches the p-type slab.'
+        : phase === 'crossing' ? 'Electrons near the border are crossing over to fill holes...'
+        : st.hill ? 'On the hill, electrons roll down to the n side and holes float up to the p side.'
+        : 'A junction formed: fixed plus charges on the n side, minus on the p side. Now show the energy hill.';
+    }
+    function touch() {
+      phase = 'crossing'; dk = 0; nX = JOIN_X; settle(); sync();
+    }
+    joinBtn.addEventListener('click', () => { if (phase === 'apart') { sliding = true; joinBtn.disabled = true; } });
+    hillBtn.addEventListener('click', () => { st.hill = !st.hill; if (st.hill) finishTask('hill', scene); persistWork(); sync(); });
+    let drag = null;
+    c.addEventListener('pointerdown', e => {
+      if (phase !== 'apart') return;
+      const p = canvasPos(c, e);
+      if (p.x > nX && p.x < nX + SLAB_W && p.y > Y0 && p.y < Y0 + H) { drag = { dx: p.x - nX }; c.setPointerCapture(e.pointerId); }
+    });
+    c.addEventListener('pointermove', e => {
+      const p = canvasPos(c, e);
+      if (drag) { nX = clamp(p.x - drag.dx, START_X, JOIN_X); if (nX >= JOIN_X - 2) { drag = null; touch(); } }
+      else c.style.cursor = phase === 'apart' && p.x > nX && p.x < nX + SLAB_W && p.y > Y0 && p.y < Y0 + H ? 'grab' : 'default';
+    });
+    const endDrag = () => { drag = null; };
+    c.addEventListener('pointerup', endDrag); c.addEventListener('pointercancel', endDrag);
+    const hillY = x => { const lo = 336, hi = 262; if (x < PX - 40) return lo; if (x > PX + 40) return hi; return lerp(lo, hi, smooth((x - (PX - 40)) / 80)); };
+    function draw() {
+      ctx.clearRect(0, 0, 860, 360);
+      // slabs
+      ctx.save();
+      ctx.fillStyle = rgba(C.electron, 0.08); ctx.strokeStyle = rgba(C.electron, 0.4); ctx.lineWidth = 1.5; roundRect(ctx, nX, Y0, SLAB_W, H, 12); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = rgba(C.hole, 0.08); ctx.strokeStyle = rgba(C.hole, 0.4); roundRect(ctx, PX, Y0, SLAB_W, H, 12); ctx.fill(); ctx.stroke();
+      ctx.restore();
+      drawPill(ctx, 'n-type', nX + SLAB_W / 2 - 60, 22, C.electron, 12);
+      drawPill(ctx, 'p-type', PX + SLAB_W / 2 + 60, 22, C.hole, 12);
+      if (phase !== 'apart') {
+        const a = phase === 'done' ? 1 : dk;
+        ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = rgba(C.field, 0.10); ctx.fillRect(PX - 42, Y0, 84, H); ctx.restore();
+        ionYs.forEach(y => { ctx.save(); ctx.globalAlpha = a; drawIon(ctx, PX - 22, y, +1); drawIon(ctx, PX + 22, y, -1); ctx.restore(); });
+        if (phase === 'done') {
+          drawPill(ctx, 'junction', PX, 22, C.field, 12);
+          // field arrows: point from + to -, and show the push on electrons
+          ctx.save(); ctx.strokeStyle = C.field; ctx.fillStyle = C.field; ctx.lineWidth = 2;
+          [Y0 + 50, Y0 + 130].forEach(y => { ctx.beginPath(); ctx.moveTo(PX - 8, y); ctx.lineTo(PX + 8, y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(PX + 10, y); ctx.lineTo(PX + 3, y - 4); ctx.lineTo(PX + 3, y + 4); ctx.closePath(); ctx.fill(); });
+          ctx.restore();
+          drawPill(ctx, 'field pushes electrons back to the n side', PX, Y0 + H + 20, C.field, 12);
+        }
+      } else {
+        drawPill(ctx, 'drag me', nX + SLAB_W / 2, Y0 + H / 2, C.electron, 12);
+      }
+      electrons.forEach((e, i) => drawElectron(ctx, nX + e.rx + Math.sin(t / 500 + i) * 4, e.y + Math.cos(t / 610 + i) * 4, 7));
+      holes.forEach((h, i) => drawHole(ctx, h.x + Math.sin(t / 540 + i) * 4, h.y + Math.cos(t / 470 + i) * 4, 7));
+      movers.forEach(m => {
+        const k = smooth(clamp(dk * 1.3, 0, 1));
+        const ex = lerp(nX + m.ex0, PX + 22, k), ey = lerp(m.ey0, m.ty, k);
+        if (k < 1) { drawHole(ctx, lerp(m.h.x, PX + 22, k), lerp(m.h.y, m.ty, k), 7, 1 - k * 0.8); drawElectron(ctx, ex, ey, 7); }
+      });
+      if (st.hill && phase === 'done') {
+        ctx.save();
+        ctx.fillStyle = '#fafaf9'; ctx.beginPath(); ctx.moveTo(nX, 356);
+        for (let x = nX; x <= PX + SLAB_W; x += 4) ctx.lineTo(x, hillY(x));
+        ctx.lineTo(PX + SLAB_W, 356); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = C.field; ctx.lineWidth = 3; ctx.beginPath();
+        for (let x = nX; x <= PX + SLAB_W; x += 4) x === nX ? ctx.moveTo(x, hillY(x)) : ctx.lineTo(x, hillY(x));
+        ctx.stroke();
+        ctx.fillStyle = C.muted; ctx.font = '700 10px Roboto Mono, monospace'; ctx.textAlign = 'left'; ctx.fillText('ELECTRON ENERGY HILL', nX + 4, 250);
+        ctx.restore();
+        const loopK = (t % 2800) / 2800;
+        const bx = lerp(PX + 170, PX - 170, smooth(loopK));
+        drawElectron(ctx, bx, hillY(bx) - 9, 8);
+        const hx = lerp(PX - 170, PX + 170, smooth(loopK));
+        drawHole(ctx, hx, hillY(hx) + 11, 8);
+        drawPill(ctx, 'electrons roll down to n', nX + 90, 300, C.electron, 11);
+        drawPill(ctx, 'holes float up to p', PX + 210, 300, C.hole, 11);
+      }
+    }
+    currentTick = dt => {
+      t += REDUCED_MOTION ? 0 : dt;
+      if (sliding) { nX = Math.min(JOIN_X, nX + (REDUCED_MOTION ? 999 : dt * 0.25)); if (nX >= JOIN_X) { sliding = false; touch(); } }
+      if (phase === 'crossing') {
+        dk = Math.min(1, dk + (REDUCED_MOTION ? 1 : dt / 2200));
+        if (dk >= 1) { phase = 'done'; movers = []; st.joined = true; finishTask('join', scene); persistWork(); sync(); }
+      }
+      draw();
+    };
+    sync(); draw();
+  }
+});
+
+// ---- Power the fan ----
+scenes.push({
+  heading: 'Power the Fan',
+  seeLabel: 'Click the silicon to free electron-hole pairs',
+  notes: "<strong>The junction splits electron-hole pairs, and that split is the current.</strong> A pair freed near the junction gets pulled apart: the electron goes up to the metal fingers, the hole goes down. With the circuit closed, electrons flow through the wire, spin the fan, and return through the back contact to fill holes. Pairs freed too far away usually find each other again, and the energy becomes heat.",
+  notebook: "<strong>Predict first:</strong> will a pair freed deep in the cell reach the fan? Test a near click and a far click, then close the switch and power the fan. <strong>Draw</strong> the full loop: photon, pair, junction push, fingers, wire, fan, back contact.",
+  build(stage) {
+    const st = sceneState('fan', { closed: false, delivered: 0, lost: 0, near: false, far: false });
+    requireTask('near', 'Free a pair near the junction and watch it split');
+    requireTask('far', 'Free a pair deep in the cell and watch what happens');
+    requireTask('fan', 'Send 10 electrons through the fan');
+    setTask('near', st.near); setTask('far', st.far); setTask('fan', st.delivered >= 10);
+    const scene = current;
+    const { c, ctx } = makeCanvas(stage, 860, 350, 'Cross-section of a solar cell wired to a fan through a switch');
+    const nearBtn = el('button', { html: ICON.zap + ' Light near the junction' });
+    const farBtn = el('button', { html: ICON.zap + ' Light deep in the cell' });
+    const lampBtn = el('button', { 'aria-pressed': 'false', html: ICON.sun + ' Shine the lamp' });
+    const switchBtn = el('button', { class: 'primary' });
+    const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+    stage.append(el('div', { class: 'tool-row' }, [nearBtn, farBtn, lampBtn, switchBtn]), status);
+    const CX0 = 140, CX1 = 520, NY0 = 66, NY1 = 104, ZY1 = 134, PY1 = 300, BY1 = 314, REACH = 200;
+    const FINGERS = [200, 330, 460];
+    let photons = [], pairs = [], riders = [], pile = [], waiting = [], flashes = [], lamp = false, lampT = 0, fanAng = 0, fanVel = 0, t = 0;
+    const wirePath = fx => [{ x: fx, y: 56 }, { x: 528, y: 56 }, { x: 700, y: 56 }, { x: 700, y: 330 }, { x: 330, y: 330 }, { x: 330, y: BY1 }];
+    function sync() {
+      switchBtn.textContent = st.closed ? 'Open the switch' : 'Close the switch';
+      lampBtn.setAttribute('aria-pressed', String(lamp));
+      lampBtn.innerHTML = ICON.sun + (lamp ? ' Turn off the lamp' : ' Shine the lamp');
+      status.innerHTML = `Through the fan: <span class="mono">${Math.min(st.delivered, 999)}</span>` + (st.delivered < 10 ? ' of 10' : '') +
+        ` · Lost as heat: <span class="mono">${st.lost}</span>` + (pile.length ? ` · Stuck at the open switch: <span class="mono">${pile.length}</span>` : '');
+    }
+    function shoot(x, y) {
+      if (photons.length + pairs.length > 40) return;
+      photons.push({ x, y, p: 0 });
+    }
+    nearBtn.addEventListener('click', () => shoot(160 + Math.random() * 340, NY1 + 14 + Math.random() * 30));
+    farBtn.addEventListener('click', () => shoot(160 + Math.random() * 340, 250 + Math.random() * 40));
+    lampBtn.addEventListener('click', () => { lamp = !lamp; sync(); });
+    switchBtn.addEventListener('click', () => {
+      st.closed = !st.closed;
+      if (st.closed) { pile.forEach(e => riders.push({ path: wirePath(e.fx), s: 0 })); pile = []; }
+      persistWork(); sync();
+    });
+    c.addEventListener('pointerdown', e => {
+      const p = canvasPos(c, e);
+      if (p.x > CX0 + 4 && p.x < CX1 - 4 && p.y > NY0 + 2 && p.y < PY1 - 2) shoot(p.x, p.y);
+    });
+    function makePair(x, y) {
+      const collected = y <= REACH;
+      pairs.push({ ex: x, ey: y, hx: x, hy: y, collected, age: 0, fx: FINGERS.reduce((b, f) => Math.abs(f - x) < Math.abs(b - x) ? f : b, FINGERS[0]) });
+    }
+    function draw() {
+      ctx.clearRect(0, 0, 860, 350);
+      // wire loop
+      const loop = wirePath(528);
+      strokePoly(ctx, loop.slice(1, 4), '#dc2626', 3.5);
+      strokePoly(ctx, loop.slice(3), '#44403c', 3.5);
+      // switch on the right wire
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.fillRect(694, 244, 12, 42);
+      ctx.strokeStyle = '#44403c'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(700, 286); ctx.lineTo(st.closed ? 700 : 724, st.closed ? 244 : 250); ctx.stroke();
+      drawDot(ctx, 700, 244, '#44403c', 4); drawDot(ctx, 700, 286, '#44403c', 4);
+      ctx.restore();
+      drawPill(ctx, st.closed ? 'switch closed' : 'switch open', 770, 265, st.closed ? C.good : C.heat, 11);
+      drawFan(ctx, 700, 150, 44, fanAng, fanVel > 0.3);
+      drawPill(ctx, 'fan', 770, 150, C.muted, 12);
+      // cell layers
+      ctx.save();
+      ctx.fillStyle = C.nTint; ctx.fillRect(CX0, NY0, CX1 - CX0, NY1 - NY0);
+      ctx.fillStyle = rgba(C.field, 0.14); ctx.fillRect(CX0, NY1, CX1 - CX0, ZY1 - NY1);
+      ctx.fillStyle = C.pTint; ctx.fillRect(CX0, ZY1, CX1 - CX0, PY1 - ZY1);
+      ctx.fillStyle = C.metal; ctx.fillRect(CX0, PY1, CX1 - CX0, BY1 - PY1);
+      ctx.fillStyle = '#cbd5e1'; ctx.fillRect(CX0 + 4, 52, CX1 - CX0, 5);
+      FINGERS.forEach(f => ctx.fillRect(f - 5, 52, 10, 16));
+      ctx.strokeStyle = '#d6d3d1'; ctx.lineWidth = 1; ctx.strokeRect(CX0 + 0.5, NY0 + 0.5, CX1 - CX0 - 1, BY1 - NY0 - 1);
+      ctx.restore();
+      for (let i = 0; i < 5; i++) { drawIon(ctx, CX0 + 40 + i * 78, NY1 + 8, +1); drawIon(ctx, CX0 + 40 + i * 78, ZY1 - 8, -1); }
+      drawPill(ctx, 'n-type', 72, (NY0 + NY1) / 2, C.electron, 11);
+      drawPill(ctx, 'junction', 72, (NY1 + ZY1) / 2 + 6, C.field, 11);
+      drawPill(ctx, 'p-type', 72, 215, C.hole, 11);
+      drawPill(ctx, 'back contact', 72, BY1 + 12, C.muted, 11);
+      drawPill(ctx, 'metal fingers', 330, 30, C.muted, 11);
+      // particles
+      waiting.forEach(h => drawHole(ctx, h.x, h.y, 6));
+      pairs.forEach(p => { drawHole(ctx, p.hx, p.hy, 6); drawElectron(ctx, p.ex, p.ey, 6); });
+      pile.forEach((e, i) => drawElectron(ctx, e.x + Math.sin(t / 300 + i) * 2, e.y, 6));
+      riders.forEach(r => { const q = polyPoint(r.path, r.s); drawElectron(ctx, q.x, q.y, 6); });
+      photons.forEach(ph => drawPhoton(ctx, ph.x, lerp(0, ph.y, ph.p), 0, 1, 560));
+      flashes.forEach(f => { ctx.save(); ctx.globalAlpha = f.life; ctx.fillStyle = rgba(C.heat, 0.25); ctx.beginPath(); ctx.arc(f.x, f.y, 18 * (1.4 - f.life), 0, Math.PI * 2); ctx.fill(); ctx.restore(); drawPill(ctx, 'heat', f.x, f.y - 22, C.heat, 10); });
+    }
+    currentTick = dt => {
+      const s = dt / 1000; t += dt;
+      if (lamp) { lampT += dt; while (lampT > 260) { lampT -= 260; shoot(150 + Math.random() * 360, NY0 + 6 + Math.random() * (PY1 - NY0 - 12)); } }
+      for (let i = photons.length - 1; i >= 0; i--) { const ph = photons[i]; ph.p += s * (REDUCED_MOTION ? 10 : 3.2); if (ph.p >= 1) { photons.splice(i, 1); makePair(ph.x, ph.y); } }
+      for (let i = pairs.length - 1; i >= 0; i--) {
+        const p = pairs[i]; p.age += s;
+        if (p.collected) {
+          p.ey = Math.max(NY0 + 4, p.ey - s * 190);
+          p.hy = Math.min(PY1 - 8, p.hy + s * 150);
+          if (p.ey <= NY0 + 4 && p.hy >= PY1 - 8) {
+            pairs.splice(i, 1);
+            if (!st.near) { st.near = true; finishTask('near', scene); }
+            waiting.push({ x: p.hx, y: PY1 - 8 });
+            if (st.closed) riders.push({ path: [{ x: p.ex, y: NY0 + 4 }, ...wirePath(p.fx)], s: 0 });
+            else pile.push({ x: p.ex, y: NY0 + 10, fx: p.fx });
+            sync(); persistWork();
+          }
+        } else {
+          const k = clamp(p.age / 1.4, 0, 1);
+          p.ex += Math.sin(p.age * 9 + i) * 1.4; p.ey += Math.cos(p.age * 7 + i) * 1.2;
+          p.hx = lerp(p.hx, p.ex, 0.04 + 0.1 * k); p.hy = lerp(p.hy, p.ey, 0.04 + 0.1 * k);
+          if (p.age > 1.5) {
+            pairs.splice(i, 1); flashes.push({ x: p.ex, y: p.ey, life: 1 });
+            st.lost++; if (!st.far) { st.far = true; finishTask('far', scene); }
+            sync(); persistWork();
+          }
+        }
+      }
+      for (let i = riders.length - 1; i >= 0; i--) {
+        const r = riders[i]; r.s += s * (REDUCED_MOTION ? 2000 : 300);
+        if (r.s >= polyLen(r.path)) {
+          riders.splice(i, 1);
+          if (waiting.length) { const h = waiting.shift(); flashes.push({ x: h.x, y: h.y, life: 0.01 }); }
+          st.delivered++; fanVel = Math.min(14, fanVel + 2.2);
+          if (st.delivered >= 10) finishTask('fan', scene);
+          sync(); persistWork();
+        }
+      }
+      if (!st.closed && riders.length) { /* electrons already in the wire finish their trip */ }
+      fanVel *= Math.exp(-dt / 1100); if (!REDUCED_MOTION) fanAng += fanVel * s;
+      flashes.forEach(f => f.life -= s / 1.1); flashes = flashes.filter(f => f.life > 0);
+      draw();
+    };
+    sync(); draw();
+  }
+});
+
+// ---- Design lab (shared by the fair test and the challenge) ----
+function labShared() { return WORK.lab ||= { surface: 'none', spacing: 4, thick: 300 }; }
+function buildLab(stage, mode) {
+  const d = labShared();
+  const st = sceneState('trials', { rows: [] });
+  const scene = current;
+  if (mode === 'fair') requireTask('fair', 'Run 3 trials that change only one variable');
+  else requireTask('best', 'Build a cell with ' + TARGET_EFF + '% efficiency or higher');
+  const { ctx } = makeCanvas(stage, 860, 300, 'Cross-section of a test solar cell and where the sunlight energy goes');
+  const rowOf = (label, items, key, fmt) => {
+    const chips = items.map(v => el('button', { class: 'chip', 'aria-pressed': 'false' }, fmt(v)));
+    chips.forEach((ch, i) => ch.addEventListener('click', () => { d[key] = key === 'surface' ? items[i].id : items[i]; syncChips(); draw(); persistWork(); }));
+    return { row: el('div', { class: 'tool-row' }, [el('span', { class: 'row-label' }, label), ...chips]), chips, items, key };
+  };
+  const rows = [
+    rowOf('Surface', SURFACES, 'surface', v => v.name),
+    rowOf('Finger spacing', SPACINGS, 'spacing', v => v + ' mm'),
+    rowOf('Silicon thickness', THICKNESSES, 'thick', v => v + ' µm')
+  ];
+  const run = el('button', { class: 'primary', html: ICON.play + ' Run test' });
+  const clear = el('button', { html: ICON.reset + ' Clear trials' });
+  const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
+  const log = el('div', { class: 'run-log' });
+  stage.append(...rows.map(r => r.row), el('div', { class: 'tool-row' }, [run, clear]), status, log);
+  function syncChips() {
+    rows.forEach(r => r.chips.forEach((ch, i) => { const v = r.key === 'surface' ? r.items[i].id : r.items[i]; const on = d[r.key] === v; ch.classList.toggle('active', on); ch.setAttribute('aria-pressed', String(on)); }));
+  }
+  const lastRun = () => st.rows[st.rows.length - 1];
+  const measured = () => { const r = lastRun(); return r && designKey(r) === designKey(d) ? r : null; };
+  function paintLog() {
+    log.innerHTML = '';
+    log.append(el('div', { class: 'row head' }, ['#', 'Surface', 'Fingers', 'Thickness', 'Efficiency'].map(x => el('span', {}, x))));
+    if (!st.rows.length) { log.append(el('div', { class: 'empty' }, 'Your trials appear here.')); return; }
+    const best = Math.max(...st.rows.map(r => r.eff));
+    st.rows.slice(-8).forEach((r, j) => {
+      const i = st.rows.length - Math.min(8, st.rows.length) + j;
+      log.append(el('div', { class: 'row' + (r.eff === best ? ' best' : '') }, [
+        el('span', { class: 'n' }, String(i + 1)), el('span', {}, SURFACES.find(s => s.id === r.surface).name),
+        el('span', {}, r.spacing + ' mm'), el('span', {}, r.thick + ' µm'), el('span', { class: 'n' }, r.eff.toFixed(1) + '%')
+      ]));
+    });
+  }
+  function evaluate() {
+    if (mode === 'fair') {
+      const f = fairTest(st.rows);
+      setTask('fair', !!f, scene);
+      status.className = 'status-line' + (f ? ' complete' : '');
+      status.textContent = f ? `Fair test: ${f.count} trials that change only ${f.name}.` : st.rows.length ? `Trials so far: ${st.rows.length}. Keep two settings the same and change just one.` : 'Pick one variable to test, then run a trial.';
+    } else {
+      const best = st.rows.length ? Math.max(...st.rows.map(r => r.eff)) : 0;
+      const hit = best >= TARGET_EFF;
+      setTask('best', hit, scene);
+      status.className = 'status-line' + (hit ? ' complete' : '');
+      status.textContent = !st.rows.length ? 'Predict the best design, then run it.' : hit ? `Challenge met: your best cell reaches ${best.toFixed(1)}%.` : `Best so far: ${best.toFixed(1)}%. The goal is ${TARGET_EFF}% or higher.`;
+    }
+  }
+  run.addEventListener('click', () => {
+    st.rows.push({ surface: d.surface, spacing: d.spacing, thick: d.thick, eff: +effText(d) });
+    if (st.rows.length > 40) st.rows.shift();
+    paintLog(); evaluate(); draw(); persistWork();
+  });
+  clear.addEventListener('click', () => { st.rows = []; paintLog(); evaluate(); draw(); persistWork(); });
+  const LOSS_ROWS = [
+    ['reflect', 'Reflected off the surface', '#f59e0b'],
+    ['shade', 'Shaded by the metal fingers', '#94a3b8'],
+    ['pass', 'Passed through the silicon', '#fbbf24'],
+    ['mismatch', 'Wrong photon energy for silicon', '#fca5a5'],
+    ['recomb', 'Pairs recombined before the junction', '#dc2626'],
+    ['resist', 'Lost in the thin top layer', '#a8a29e'],
+    ['out', 'Electricity out', '#10b981']
+  ];
+  function draw() {
+    ctx.clearRect(0, 0, 860, 300);
+    const s = SURFACES.find(x => x.id === d.surface);
+    const X0 = 40, X1 = 420, top = 92, nH = 14, pH = 18 + d.thick * 0.5, bH = 8;
+    // sunlight
+    ctx.save(); ctx.strokeStyle = rgba(C.photon, 0.6); ctx.fillStyle = rgba(C.photon, 0.6); ctx.lineWidth = 2;
+    for (let i = 0; i < 7; i++) { const x = X0 + 30 + i * 52; ctx.beginPath(); ctx.moveTo(x, 14); ctx.lineTo(x, top - 14); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x, top - 8); ctx.lineTo(x - 5, top - 16); ctx.lineTo(x + 5, top - 16); ctx.closePath(); ctx.fill(); }
+    const nRef = Math.round(s.reflect * 10);
+    ctx.strokeStyle = rgba(C.photon, 0.35); ctx.setLineDash([4, 3]);
+    for (let i = 0; i < nRef; i++) { const x = X0 + 44 + i * 36; ctx.beginPath(); ctx.moveTo(x, top - 4); ctx.lineTo(x + 16, top - 40); ctx.stroke(); }
     ctx.restore();
-    // CTA text (right)
+    // layers
     ctx.save();
-    ctx.textAlign = 'left';
-    ctx.fillStyle = C_SUN; ctx.font = '800 30px system-ui';
-    ctx.fillText('Now build it for real.', 820, 330);
-    ctx.fillStyle = 'rgba(245,245,245,0.92)'; ctx.font = '500 19px system-ui';
-    const lines = [
-      'Get copper foil, salt water, and a',
-      'multimeter from Eric.',
-      '',
-      'Build your own photocell and measure',
-      'its voltage in sun and in shade.',
-      '',
-      'Same physics. Real data. Your hands.'
-    ];
-    lines.forEach((ln, i) => ctx.fillText(ln, 820, 376 + i * 30));
+    ctx.fillStyle = C.nTint; ctx.fillRect(X0, top, X1 - X0, nH);
+    ctx.fillStyle = C.pTint; ctx.fillRect(X0, top + nH, X1 - X0, pH);
+    ctx.fillStyle = C.metal; ctx.fillRect(X0, top + nH + pH, X1 - X0, bH);
+    if (d.surface !== 'none') { ctx.fillStyle = '#1e3a8a'; ctx.fillRect(X0, top - 4, X1 - X0, 4); }
+    if (d.surface === 'tex') { ctx.fillStyle = '#1e3a8a'; for (let x = X0; x < X1; x += 14) { ctx.beginPath(); ctx.moveTo(x, top - 4); ctx.lineTo(x + 7, top - 12); ctx.lineTo(x + 14, top - 4); ctx.closePath(); ctx.fill(); } }
+    ctx.fillStyle = '#64748b';
+    const gap = d.spacing * 28;
+    for (let x = X0 + gap / 2; x < X1 - 3; x += gap) ctx.fillRect(x - 3, top - 12, 6, 12);
+    ctx.restore();
+    // thickness dimension
+    const yA = top + nH, yB = top + nH + pH;
+    ctx.save(); ctx.strokeStyle = C.muted; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(X1 + 14, yA); ctx.lineTo(X1 + 14, yB); ctx.moveTo(X1 + 9, yA); ctx.lineTo(X1 + 19, yA); ctx.moveTo(X1 + 9, yB); ctx.lineTo(X1 + 19, yB); ctx.stroke(); ctx.restore();
+    ctx.save(); ctx.fillStyle = C.muted; ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(d.thick + ' µm', X1 + 24, (yA + yB) / 2);
+    ctx.fillText('fingers every ' + d.spacing + ' mm', X0, 290);
+    ctx.restore();
+    // results
+    ctx.save(); ctx.strokeStyle = '#e8e0d2'; ctx.beginPath(); ctx.moveTo(468, 16); ctx.lineTo(468, 284); ctx.stroke(); ctx.restore();
+    const m = measured();
+    ctx.save(); ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    if (!m) {
+      ctx.fillStyle = C.muted; ctx.font = '600 15px Inter, sans-serif'; ctx.fillText('Run the test to measure this design.', 492, 60);
+      ctx.font = '400 13px Inter, sans-serif'; ctx.fillText('1000 W of sunlight will hit the cell.', 492, 84);
+    } else {
+      const res = cellModel(d), L = res.losses;
+      ctx.fillStyle = res.eff >= TARGET_EFF ? C.good : C.ink; ctx.font = '700 40px Roboto Serif, serif'; ctx.fillText(res.eff.toFixed(1) + '%', 492, 58);
+      ctx.fillStyle = C.muted; ctx.font = '600 13px Inter, sans-serif'; ctx.fillText(`efficiency: ${Math.round(L.out)} W out of 1000 W of sunlight`, 492, 82);
+      LOSS_ROWS.forEach(([k, label, col], i) => {
+        const y = 110 + i * 25, w = Math.max(2, L[k] * 0.3);
+        ctx.fillStyle = col; roundRect(ctx, 492, y, w, 12, 4); ctx.fill();
+        ctx.fillStyle = k === 'out' ? C.good : C.ink; ctx.font = (k === 'out' ? '700' : '500') + ' 12px Inter, sans-serif';
+        ctx.fillText(label, 492 + w + 8, y + 10);
+        ctx.fillStyle = C.muted; ctx.font = '700 12px Roboto Mono, monospace'; ctx.textAlign = 'right'; ctx.fillText(Math.round(L[k]) + ' W', 846, y + 10); ctx.textAlign = 'left';
+      });
+    }
     ctx.restore();
   }
-};
+  syncChips(); paintLog(); evaluate(); draw();
+}
+scenes.push({
+  heading: 'Design a Fair Test',
+  seeLabel: 'Test one variable inside the cell',
+  notes: "<strong>Engineers improve cells by changing what is inside them.</strong> You can change three things: the surface coating, how far apart the metal fingers are, and how thick the silicon is. A <strong>fair test</strong> changes only one variable and keeps the others the same. <strong>Efficiency</strong> is the percent of sunlight energy that comes out as electricity.",
+  notebook: "Pick <strong>one</strong> variable. <strong>Write</strong> your question and your hypothesis first. <strong>Make a table</strong>: trial, setting, efficiency. Run at least three trials that change only that variable. Then <strong>explain</strong> your result in one sentence using what you learned in Steps 2 to 7.",
+  build(stage) { buildLab(stage, 'fair'); }
+});
+scenes.push({
+  heading: 'Build the Best Cell',
+  seeLabel: 'Combine your findings into one design',
+  notes: "<strong>Every choice inside a cell is a trade-off.</strong> Something that saves energy in one place can lose it somewhere else. Use your fair test and your classmates' results to find the best setting for all three variables. The goal is a cell that turns <strong>20 percent</strong> or more of the sunlight into electricity.",
+  notebook: "Share results with classmates who tested other variables. <strong>Predict</strong> the best design before you run it. <strong>Record</strong> every design you try and circle the winner. For each of its three settings, write one sentence on why it beats the others.",
+  build(stage) { buildLab(stage, 'best'); }
+});
+
+// ---- Practice: 10 questions, one at a time ----
+const PRACTICE = [
+  { q: 'In a row of bonds, electrons keep hopping one spot to the right into a hole. Which way does the hole travel?',
+    choices: ['To the left', 'To the right', 'It stays in the same place'], answer: 'To the left',
+    wrong: 'Picture the empty seat: each person slides right, so where does the empty seat end up?',
+    steps: ['An electron hops right into the hole.', 'The spot it left is now empty, one place to the left.', 'Each hop moves the hole one spot left.'], final: 'The hole travels to the left.' },
+  { q: 'Orange light has a wavelength of 620 nm. Use E = 1240 ÷ wavelength to find the energy of one photon in eV.',
+    label: 'Energy in eV', answer: 2, traps: [[0.5, 'Divide 1240 by the wavelength, not the wavelength by 1240.']],
+    wrong: 'Divide 1240 by 620.',
+    steps: ['E = 1240 ÷ wavelength', 'E = 1240 ÷ 620', '2.0 eV is more than 1.1 eV, so this photon can free an electron.'], final: '2.0 eV' },
+  { q: 'A student shines a very bright 1300 nm infrared lamp on a silicon cell. Almost no current flows. Why?',
+    choices: ['Each photon has only about 0.95 eV, less than the 1.1 eV silicon needs', 'The lamp is still not bright enough', 'The metal fingers block infrared light'],
+    answer: 'Each photon has only about 0.95 eV, less than the 1.1 eV silicon needs',
+    wrong: 'Find the energy of one photon with E = 1240 ÷ 1300 and compare it with 1.1 eV.',
+    steps: ['E = 1240 ÷ 1300 = 0.95 eV.', '0.95 eV is less than the 1.1 eV silicon needs.', 'One photon frees at most one electron. A brighter lamp adds more photons, but each one is still too weak.'], final: 'Each photon is below 1.1 eV.' },
+  { q: 'A 2.0 eV photon frees one electron from silicon, which needs 1.1 eV. How many eV of the photon\'s energy become heat?',
+    label: 'Heat in eV', answer: 0.9, traps: [[3.1, 'Subtract: the photon\'s energy minus what silicon needs.']],
+    wrong: 'Subtract 1.1 eV from the photon\'s 2.0 eV.',
+    steps: ['Silicon uses 1.1 eV to free the electron.', 'Extra energy = 2.0 − 1.1', 'The extra energy becomes heat.'], final: '0.9 eV' },
+  { q: 'Phosphorus has 5 outer electrons and silicon has 4. What does adding phosphorus to silicon make?',
+    choices: ['n-type silicon, with extra free electrons', 'p-type silicon, with extra holes', 'Pure silicon, with no change'], answer: 'n-type silicon, with extra free electrons',
+    wrong: 'Count the outer electrons: does phosphorus bring one extra, or leave one missing?',
+    steps: ['Phosphorus bonds to its 4 silicon neighbors using 4 electrons.', 'Its 5th electron has no bond, so it is free to move.', 'Extra free electrons (negative carriers) make n-type.'], final: 'n-type silicon' },
+  { q: 'What is the overall charge of a slab of n-type silicon?',
+    choices: ['Neutral, because each extra electron comes with an extra proton', 'Negative, because it has extra electrons', 'Positive, because it lost electrons'],
+    answer: 'Neutral, because each extra electron comes with an extra proton',
+    wrong: 'Count the protons too: a phosphorus nucleus has one more proton than silicon.',
+    steps: ['Each phosphorus atom brings 1 extra electron.', 'Its nucleus also has 1 extra proton.', 'The extra charges cancel, so the net charge stays 0.'], final: 'Neutral' },
+  { q: 'Light frees an electron-hole pair right inside the junction. Where does the electric field send the electron?',
+    choices: ['To the n-type side, then out through the metal fingers', 'To the p-type side, then out through the back contact', 'Nowhere, it stays in the junction'],
+    answer: 'To the n-type side, then out through the metal fingers',
+    wrong: 'Think about the hill: which way do electrons roll?',
+    steps: ['The junction has fixed plus charges on the n side and minus charges on the p side.', 'The electron is pulled toward the plus charges, down the hill to the n side.', 'From the n side it reaches the metal fingers and the wire. The hole goes the other way.'], final: 'To the n side and the fingers' },
+  { q: 'In a very thick cell, light frees a pair deep in the p-type layer, far from the junction. What most likely happens?',
+    choices: ['The electron and hole find each other again, and the energy becomes heat', 'The field pulls the electron straight to the fan', 'The electron leaves the cell as light'],
+    answer: 'The electron and hole find each other again, and the energy becomes heat',
+    wrong: 'Recall the far clicks in Power the Fan. Did those pairs reach the junction?',
+    steps: ['The junction\'s push only reaches a short distance.', 'A pair freed far away wanders instead of being split.', 'The electron falls back into a hole, and the energy is lost as heat.'], final: 'It recombines, and the energy becomes heat.' },
+  { q: 'A cell receives 1000 W of sunlight and delivers 180 W of electricity. What is its efficiency in percent?',
+    label: 'Efficiency in %', answer: 18, traps: [[0.18, 'Turn the decimal into a percent: multiply by 100.']],
+    wrong: 'Efficiency = power out ÷ power in × 100.',
+    steps: ['Efficiency = power out ÷ power in × 100', '= 180 ÷ 1000 × 100', '= 0.18 × 100'], final: '18%' },
+  { q: 'An uncoated cell reflects 30% of the light that hits it, and its efficiency is 14%. A coating cuts reflection to 10%, and nothing else changes. What is the new efficiency in percent?',
+    label: 'New efficiency in %', answer: 18, traps: [[34, 'Reflection is not added to efficiency. Compare how much light gets in.'], [12.6, 'The coating lets more light in, so efficiency should go up.']],
+    wrong: 'Without the coating 70% of the light gets in. With it, 90% does. Scale 14% by 90 ÷ 70.',
+    steps: ['Light that gets in without the coating: 100% − 30% = 70%.', 'Light that gets in with the coating: 100% − 10% = 90%.', 'Everything else is the same, so efficiency scales with the light that gets in.', 'New efficiency = 14% × 90 ÷ 70'], final: '18%' }
+];
+const numberOf = v => { const s = String(v).replace(/−/g, '-').replace(/[a-zA-Z%°\s]/g, ''); return s !== '' && /^-?\d*\.?\d+$/.test(s) ? Number(s) : null; };
+// one assess function powers the UI and the tests
+function assessPractice(i, value) {
+  const Q = PRACTICE[i];
+  if (value == null || String(value).trim() === '') return { state: 'no', message: Q.choices ? 'Choose an answer first.' : 'Enter a number first.' };
+  if (Q.choices) return value === Q.answer ? { state: 'ok', message: 'Correct. Open the solution and copy the steps into your notebook.' } : { state: 'no', message: Q.wrong };
+  const n = numberOf(value);
+  if (n == null) return { state: 'no', message: 'Enter just a number. Units are optional.' };
+  if (Math.abs(n - Q.answer) < 0.051) return { state: 'ok', message: 'Correct. Open the solution and copy the steps into your notebook.' };
+  const trap = (Q.traps || []).find(([v]) => Math.abs(n - v) < 0.051);
+  return { state: 'no', message: trap ? trap[1] : Q.wrong };
+}
+scenes.push({
+  heading: 'Practice Questions',
+  seeLabel: 'One question at a time',
+  practice: true,
+  notes: "<strong>Ten questions pull the whole inside story together:</strong> photons and the 1.1 eV rule, holes, doping, the junction, and efficiency. Work each one in your notebook first, then check it here. Open the solution to copy the method.",
+  notebook: "Number your page <strong>1 to 10</strong>. Write each answer <strong>before checking</strong>. Use the solution to copy the moves into your notebook.",
+  build(stage) {
+    const st = sceneState('practice-v1', { i: 0, answers: PRACTICE.map(() => ({ value: '', checked: false, seen: false })) });
+    PRACTICE.forEach((_, i) => requireTask('answer:' + i, 'Question ' + (i + 1) + ' - check a correct answer'));
+    PRACTICE.forEach((_, i) => requireTask('solution:' + i, 'Question ' + (i + 1) + ' - open the solution'));
+    const scene = current;
+    const done = i => st.answers[i].checked && assessPractice(i, st.answers[i].value).state === 'ok';
+    function refresh() { PRACTICE.forEach((_, i) => { setTask('answer:' + i, done(i), scene); setTask('solution:' + i, st.answers[i].seen, scene); }); }
+    const panel = el('div');
+    stage.append(panel);
+    function render(focusQ) {
+      panel.innerHTML = '';
+      const i = st.i, Q = PRACTICE[i], a = st.answers[i];
+      const fb = el('p', { class: 'pq-feedback', role: 'status', 'aria-live': 'polite' });
+      const setFb = r => { fb.textContent = r ? r.message : ''; fb.className = 'pq-feedback' + (r ? ' ' + r.state : ''); };
+      let field, choiceBtns = [];
+      if (Q.choices) {
+        field = el('div', { class: 'pq-choices', role: 'group', 'aria-label': 'Answer choices' });
+        choiceBtns = Q.choices.map(ch => {
+          const b = el('button', { class: 'pq-choice' + (a.value === ch ? ' active' : ''), 'aria-pressed': String(a.value === ch) }, ch);
+          b.addEventListener('click', () => { a.value = ch; a.checked = false; choiceBtns.forEach(x => { const on = x.textContent === ch; x.classList.toggle('active', on); x.setAttribute('aria-pressed', String(on)); }); setFb(null); update(); persistWork(); });
+          return b;
+        });
+        field.append(...choiceBtns);
+      } else {
+        field = el('input', { id: 'pqInput', class: 'pq-input', type: 'text', inputmode: 'decimal', autocomplete: 'off', 'data-managed': 'true' });
+        field.value = a.value;
+        field.addEventListener('input', () => { a.value = field.value; a.checked = false; setFb(null); update(); persistWork(); });
+        field.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); check(); } });
+      }
+      const checkBtn = el('button', { class: 'primary' }, 'Check answer');
+      const sol = el('div', { class: 'pq-solution', id: 'pqSolution', hidden: '' }, [el('ol', {}, Q.steps.map(s => el('li', { html: s }))), el('div', { class: 'final', html: Q.final })]);
+      const solBtn = el('button', { 'aria-expanded': 'false', 'aria-controls': 'pqSolution' }, 'Show solution');
+      const prev = el('button', {}, 'Previous question'); prev.disabled = i === 0;
+      const next = el('button', { class: 'primary' }, i === PRACTICE.length - 1 ? 'Finish practice' : 'Next question');
+      function check() { const r = assessPractice(i, a.value); a.checked = r.state === 'ok'; setFb(r); update(); persistWork(); }
+      function update() { refresh(); next.disabled = !TEACHER && !(done(i) && a.seen); }
+      checkBtn.addEventListener('click', check);
+      solBtn.addEventListener('click', () => { const open = sol.hidden; sol.hidden = !open; solBtn.textContent = open ? 'Hide solution' : 'Show solution'; solBtn.setAttribute('aria-expanded', String(open)); if (open) a.seen = true; update(); persistWork(); });
+      prev.addEventListener('click', () => { st.i--; persistWork(); render(true); });
+      next.addEventListener('click', () => {
+        if (!TEACHER && !(done(i) && a.seen)) return;
+        if (i < PRACTICE.length - 1) { st.i++; persistWork(); render(true); }
+        else if (canAdvance()) setScene(current + 1);
+        else gateStatus.textContent = 'Confirm your notebook work above to finish practice.';
+      });
+      const correct = PRACTICE.filter((_, j) => done(j)).length;
+      const qEl = el('h3', { class: 'pq-question', tabindex: '-1', html: Q.q });
+      panel.append(...[
+        el('div', { class: 'pq-count' }, 'Question ' + (i + 1) + ' of ' + PRACTICE.length), qEl,
+        Q.choices ? el('span', { class: 'pq-label' }, 'Your answer') : el('label', { class: 'pq-label', for: 'pqInput' }, Q.label),
+        field,
+        Q.choices ? null : el('p', { class: 'pq-hint' }, 'Enter a number. Units are optional.'),
+        el('div', { class: 'pq-actions' }, [checkBtn, solBtn]), fb, sol,
+        el('div', { class: 'pq-nav' }, [prev, next]),
+        el('div', { class: 'pq-progress' }, [el('div', { class: 'bar' }, el('div', { class: 'fill', style: 'width:' + (correct * 10) + '%' })), el('p', {}, correct + ' of 10 correct · Saved on this device')])
+      ].filter(Boolean));
+      if (a.checked) setFb(assessPractice(i, a.value));
+      update();
+      if (focusQ) qEl.focus();
+    }
+    render(false);
+  }
+});
+
+// ---- What questions do you still have? ----
+scenes.push({
+  heading: 'What Questions Do You Still Have?',
+  seeLabel: 'Your questions',
+  notes: "<strong>You went inside the black box.</strong> You saw photons free electrons, holes move, doping make n-type and p-type, the junction split pairs into a current, and design choices change efficiency. What are you still wondering? Your questions launch the next lesson.",
+  notebook: "Write the questions you still have in your notebook, then add them here.",
+  build(stage) {
+    const APP = 'How Solar Panels Work';
+    const TEACHER_CODE = 'sparky2026';
+    const input = el('input', { type: 'text', class: 'pq-input', style: 'font-family:var(--font-sans);font-size:16px;max-width:none;flex:1;min-width:0', placeholder: 'What question do you still have?', autocomplete: 'off', 'aria-label': 'Your question' });
+    const btn = el('button', { class: 'primary' }, 'Add question');
+    const msg = el('p', { class: 'status-line', style: 'text-align:left;min-height:0', role: 'status', 'aria-live': 'polite' });
+    const feed = el('div', { style: 'margin-top:8px;border:1px solid var(--borderColor);border-radius:10px;background:#fff' });
+    const note = el('p', { class: 'caption', style: 'text-align:left' }, 'Saved on this device.');
+    stage.append(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap' }, [input, btn]), msg, feed, note);
+    if (TEACHER) {
+      const tCode = el('input', { type: 'password', class: 'pq-input', style: 'font-size:14px;max-width:200px;min-height:44px', placeholder: 'Teacher passcode', 'aria-label': 'Teacher passcode' });
+      const clearBtn = el('button', { style: 'color:var(--accentRed)' }, 'Clear all questions (teacher)');
+      const tMsg = el('p', { class: 'status-line', style: 'text-align:left;min-height:0;font-size:13px' });
+      let armed = false;
+      clearBtn.addEventListener('click', async () => {
+        if (tCode.value !== TEACHER_CODE) { tMsg.textContent = 'Wrong passcode.'; armed = false; return; }
+        if (!armed) { armed = true; tMsg.textContent = ''; clearBtn.textContent = 'Click again to clear ALL questions'; return; }
+        clearBtn.disabled = true;
+        try { await window.ClassQ.clear(APP); tMsg.textContent = 'Cleared.'; } catch (e) { tMsg.textContent = 'Could not clear. Try again.'; }
+        armed = false; clearBtn.disabled = false; clearBtn.textContent = 'Clear all questions (teacher)';
+      });
+      stage.append(el('div', { style: 'display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap' }, [tCode, clearBtn]), tMsg);
+    }
+    function paint(items) {
+      feed.innerHTML = '';
+      const qlist = []; (items || []).forEach(it => (it.questions || []).forEach(q => { if (q) qlist.push(q); }));
+      if (!qlist.length) { feed.append(el('p', { class: 'caption', style: 'padding:16px' }, 'Your questions appear here.')); return; }
+      qlist.forEach(q => feed.append(el('div', { style: 'padding:10px 12px;border-bottom:1px solid var(--borderSubtle);font-size:15px;line-height:1.45' }, q)));
+    }
+    paint([]);
+    function wireLive() {
+      if (window._qUnsub) { try { window._qUnsub(); } catch (e) {} window._qUnsub = null; }
+      if (window.ClassQ) { note.textContent = window.ClassQ.mode === 'live' ? 'Shared with your class.' : 'Saved on this device.'; window._qUnsub = window.ClassQ.subscribe(APP, paint); }
+    }
+    if (window.ClassQ) wireLive(); else window.addEventListener('classq-ready', wireLive, { once: true });
+    const BAD = /\b(fuck|shit|bitch|damn|crap|ass|dick|piss)\b/i;
+    async function add() {
+      const q = input.value.trim();
+      if (!q) { msg.textContent = 'Type a question first.'; return; }
+      if (BAD.test(q)) { msg.textContent = 'Keep it school-appropriate, please.'; return; }
+      btn.disabled = true; msg.textContent = '';
+      try { if (!window.ClassQ) throw new Error('offline'); await window.ClassQ.submit({ app: APP, questions: [q] }); input.value = ''; input.focus(); }
+      catch (err) { msg.textContent = 'Could not save. Try again.'; }
+      btn.disabled = false;
+    }
+    btn.addEventListener('click', add);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+  }
+});
 
 // =====================================================
-//  Scenes list
+//  Nav controller + completion gate
 // =====================================================
-const scenes = [scene1, scene2, scene3, scene4, scene5, scene6, scene7, scene8, scene9, scene10];
+const stageEl = $('#stage'), stageLabel = $('#stageLabel'), stepHeadingEl = $('#stepHeading'), notesEl = $('#notes'), notebookTextEl = $('#notebookText');
+const stepIndicator = $('#stepIndicator'), stepNumEl = $('#stepNum'), stepTitleEl = $('#stepTitle'), progressFill = $('#progressFill');
+const prevBtn = $('#prevBtn'), nextBtn = $('#nextBtn'), resetBtn = $('#resetBtn'), notebookDone = $('#notebookDone'), gateStatus = $('#gateStatus');
+const teacherBar = $('#teacherBar'), stepJump = $('#stepJump');
+// Teacher mode: ?teacher=1 unlocks every step and the practice questions; ?teacher=0 leaves. Sticky on this device.
+const _tParam = new URLSearchParams(location.search).get('teacher');
+try { if (_tParam === '1') localStorage.setItem('solar_teacher', '1'); if (_tParam === '0') localStorage.removeItem('solar_teacher'); } catch (e) {}
+let TEACHER = _tParam === '1';
+if (_tParam !== '0') { try { TEACHER = TEACHER || localStorage.getItem('solar_teacher') === '1'; } catch (e) {} }
 
-// =====================================================
-//  UI
-// =====================================================
-const phaseNameEl = document.getElementById("phaseName");
-const notesEl = document.getElementById("notes");
-const stepHeadingEl = document.getElementById("stepHeading");
-const notebookTextEl = document.getElementById("notebookText");
-const stepIndicator = document.getElementById("stepIndicator");
-const prevBtn = document.getElementById("prevBtn");
-const nextBtn = document.getElementById("nextBtn");
-const resetBtn = document.getElementById("resetBtn");
-const simControlsEl = document.getElementById("simControls");
-const ctrlA = document.getElementById("ctrlA");
-const ctrlB = document.getElementById("ctrlB");
-const simReadout = document.getElementById("simReadout");
+const WORK_KEY = 'solar-engineering-work-v2';
+let WORK = {};
+try { const parsed = JSON.parse(localStorage.getItem(WORK_KEY)); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) WORK = parsed; } catch (e) { WORK = {}; }
+let workTimer = null, storageOK = true;
+function saveNow() { try { localStorage.setItem(WORK_KEY, JSON.stringify(WORK)); storageOK = true; } catch (e) { storageOK = false; } }
+function persistWork() { clearTimeout(workTimer); workTimer = setTimeout(() => { saveNow(); if (!storageOK) updateGate(); }, 250); }
+window.addEventListener('pagehide', () => { clearTimeout(workTimer); saveNow(); });
 
-function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+let current = 0;
+let requiredTasks = new Map();
+function gateFor(scene = current) { return WORK['gate:v1:' + scene] ||= { tasks: {}, notebook: false, complete: false }; }
+function requireTask(id, label) { requiredTasks.set(id, label); updateGate(); }
+function setTask(id, doneFlag, scene = current) { gateFor(scene).tasks[id] = !!doneFlag; if (scene === current) updateGate(); persistWork(); }
+function finishTask(id, scene = current) { setTask(id, true, scene); }
+function canAdvance() { if (TEACHER) return true; const g = gateFor(); return g.notebook && [...requiredTasks.keys()].every(id => g.tasks[id]); }
+function updateGate() {
+  const g = gateFor(), left = [...requiredTasks].filter(([id]) => !g.tasks[id]);
+  g.complete = g.notebook && left.length === 0;
+  notebookDone.checked = g.notebook;
+  nextBtn.disabled = current === scenes.length - 1 || !canAdvance();
+  gateStatus.classList.toggle('complete', g.complete && !TEACHER);
+  gateStatus.textContent = !storageOK ? 'Storage unavailable. Keep your answers in your notebook.'
+    : TEACHER ? 'Teacher mode: every step is unlocked. Use the menu above to jump around. Add ?teacher=0 to the link to leave.'
+    : left.length ? `Still to do (${left.length}): ${left[0][1]}.`
+    : !g.notebook ? 'Finish your notes and notebook task, then confirm above.'
+    : 'Step complete.';
+}
+notebookDone.addEventListener('change', () => { gateFor().notebook = notebookDone.checked; updateGate(); persistWork(); });
+function sceneState(id, defaults) { return WORK['state:' + current + ':' + id] ||= defaults; }
+const pad2 = n => n < 10 ? '0' + n : '' + n;
 
-function setScene(i) {
-  currentSceneIdx = i;
-  animT = 0;
-  sceneFadeT = 0;
+function setScene(i, opts = {}) {
+  if (i < 0 || i >= scenes.length) return;
+  if (!TEACHER && i > current && (i !== current + 1 || !canAdvance())) return;
+  current = i; WORK.lastScene = i;
+  requiredTasks = new Map();
+  currentTick = null;
+  if (window._qUnsub) { try { window._qUnsub(); } catch (e) {} window._qUnsub = null; }
   const s = scenes[i];
-  if (s.setup) s.setup();
-  phaseNameEl.textContent = s.phase;
-  phaseNameEl.style.color = s.phaseColor;
+  stageEl.innerHTML = '';
+  stageLabel.textContent = s.seeLabel || 'What you see';
+  stepHeadingEl.textContent = s.heading;
+  stepNumEl.textContent = 'Step ' + pad2(i + 1);
+  stepTitleEl.textContent = s.heading;
   notesEl.innerHTML = s.notes;
-  stepHeadingEl.textContent = s.phase;
   notebookTextEl.innerHTML = s.notebook;
   stepIndicator.textContent = `${pad2(i + 1)} / ${pad2(scenes.length)}`;
+  progressFill.style.width = ((i + 1) / scenes.length * 100) + '%';
   prevBtn.disabled = i === 0;
-  nextBtn.disabled = i === scenes.length - 1;
-  nextBtn.textContent = i === scenes.length - 1 ? 'Done' : 'Next →';
-  // controls
-  if (s.isInteractive) {
-    simControlsEl.classList.add('visible');
-    const c = s.controls;
-    if (c && c.aLabel) { ctrlA.textContent = c.aLabel; ctrlA.classList.remove('hidden'); ctrlA.className = 'sim-btn ' + (c.aClass || '') ; }
-    else ctrlA.classList.add('hidden');
-    if (c && c.bLabel) { ctrlB.textContent = c.bLabel; ctrlB.classList.remove('hidden'); ctrlB.className = 'sim-btn ' + (c.bClass || ''); }
-    else ctrlB.classList.add('hidden');
-  } else {
-    simControlsEl.classList.remove('visible');
+  nextBtn.innerHTML = i === scenes.length - 1 ? 'Done' : 'Next ' + ICON.right;
+  if (TEACHER) stepJump.value = String(i);
+  s.build(stageEl);
+  updateGate(); persistWork();
+  if (!opts.initial) { window.scrollTo(0, 0); stepHeadingEl.focus({ preventScroll: true }); }
+}
+prevBtn.addEventListener('click', () => setScene(current - 1));
+nextBtn.addEventListener('click', () => { if (current < scenes.length - 1) setScene(current + 1); });
+resetBtn.addEventListener('click', () => setScene(0));
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input, textarea, select, button, [contenteditable="true"]')) return;
+  if (e.key === 'ArrowRight' && current < scenes.length - 1) setScene(current + 1);
+  if (e.key === 'ArrowLeft' && current > 0) setScene(current - 1);
+});
+if (TEACHER) {
+  teacherBar.hidden = false;
+  scenes.forEach((sc, i) => stepJump.append(el('option', { value: String(i) }, 'Step ' + pad2(i + 1) + '  ·  ' + sc.heading)));
+  stepJump.addEventListener('change', () => { const i = Number(stepJump.value); if (!Number.isNaN(i)) setScene(i); });
+}
+// resume no later than the first unfinished step
+let resumeAt = 0;
+const saved = Number(WORK.lastScene) || 0;
+while (resumeAt < saved && gateFor(resumeAt).complete) resumeAt++;
+current = TEACHER ? saved : resumeAt;
+setScene(current, { initial: true });
+</script>
+<script type="module">
+/* ===== Class Questions collector =====
+   Paste a Firebase web config below to turn on the shared class feed (one project can
+   collect every app; rows are tagged by `app`). Leave the PASTE_ values for local demo mode. */
+const firebaseConfig = {
+  apiKey: "PASTE_FIREBASE_apiKey",
+  authDomain: "PASTE_FIREBASE_authDomain",
+  projectId: "PASTE_FIREBASE_projectId",
+  appId: "PASTE_FIREBASE_appId"
+};
+const configured = !JSON.stringify(firebaseConfig).includes('PASTE_');
+const listeners = {}, key = a => 'classq:' + a;
+const readLocal = a => { try { return JSON.parse(localStorage.getItem(key(a)) || '[]'); } catch (e) { return []; } };
+const notifyLocal = a => (listeners[a] || []).forEach(cb => cb(readLocal(a)));
+function setLocal() {
+  window.ClassQ = {
+    mode: 'demo',
+    async submit(p) { const r = { app: p.app, questions: p.questions || [], created: Date.now() }; const arr = readLocal(r.app); arr.unshift(r); localStorage.setItem(key(r.app), JSON.stringify(arr.slice(0, 300))); notifyLocal(r.app); },
+    subscribe(a, cb) { (listeners[a] = listeners[a] || []).push(cb); cb(readLocal(a)); return () => { listeners[a] = (listeners[a] || []).filter(x => x !== cb); }; },
+    async clear(a) { localStorage.removeItem(key(a)); notifyLocal(a); }
+  };
+}
+async function init() {
+  if (!configured) setLocal();
+  else {
+    try {
+      const appMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const fs = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+      const db = fs.getFirestore(appMod.initializeApp(firebaseConfig));
+      window.ClassQ = {
+        mode: 'live',
+        async submit(p) { await fs.addDoc(fs.collection(db, 'questions'), { app: p.app, questions: p.questions || [], created: Date.now() }); },
+        subscribe(a, cb) { const qy = fs.query(fs.collection(db, 'questions'), fs.where('app', '==', a), fs.limit(400)); return fs.onSnapshot(qy, snap => { const list = []; snap.forEach(d => list.push(d.data())); list.sort((x, y) => (y.created || 0) - (x.created || 0)); cb(list); }, () => cb([])); },
+        async clear(a) { const snap = await fs.getDocs(fs.query(fs.collection(db, 'questions'), fs.where('app', '==', a))); for (const dd of snap.docs) await fs.deleteDoc(dd.ref); }
+      };
+    } catch (e) { setLocal(); }
   }
-  updateReadout();
+  window.dispatchEvent(new Event('classq-ready'));
 }
-
-function updateReadout() {
-  const s = scenes[currentSceneIdx];
-  simReadout.innerHTML = (s.isInteractive && s.readout) ? s.readout() : '';
-}
-
-prevBtn.addEventListener("click", () => { if (currentSceneIdx > 0) setScene(currentSceneIdx - 1); });
-nextBtn.addEventListener("click", () => { if (currentSceneIdx < scenes.length - 1) setScene(currentSceneIdx + 1); });
-resetBtn.addEventListener("click", () => setScene(currentSceneIdx));
-document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowRight" && currentSceneIdx < scenes.length - 1) setScene(currentSceneIdx + 1);
-  if (e.key === "ArrowLeft" && currentSceneIdx > 0) setScene(currentSceneIdx - 1);
-});
-ctrlA.addEventListener("click", () => { const c = scenes[currentSceneIdx].controls; if (c && c.onA) { c.onA(); updateReadout(); } });
-ctrlB.addEventListener("click", () => { const c = scenes[currentSceneIdx].controls; if (c && c.onB) { c.onB(); updateReadout(); } });
-
-// =====================================================
-//  Draggable sun (pointer + touch)
-// =====================================================
-function canvasPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  return { x: (e.clientX - rect.left) * (W / rect.width), y: (e.clientY - rect.top) * (H / rect.height) };
-}
-canvas.addEventListener("pointerdown", (e) => {
-  const s = scenes[currentSceneIdx];
-  if (!s.draggableSun) return;
-  const p = canvasPos(e);
-  if (Math.hypot(p.x - sun.x, p.y - sun.y) < 70) { dragging = true; canvas.setPointerCapture(e.pointerId); }
-});
-canvas.addEventListener("pointermove", (e) => {
-  if (!dragging) return;
-  const p = canvasPos(e);
-  sun.x = clamp(p.x, 80, W - 80);
-  sun.y = clamp(p.y, 50, 340);
-});
-canvas.addEventListener("pointerup", () => { dragging = false; });
-canvas.addEventListener("pointercancel", () => { dragging = false; });
-canvas.addEventListener("pointermove", (e) => {
-  const s = scenes[currentSceneIdx];
-  if (s.draggableSun && !dragging) {
-    const p = canvasPos(e);
-    canvas.style.cursor = Math.hypot(p.x - sun.x, p.y - sun.y) < 70 ? 'grab' : 'default';
-  } else if (dragging) { canvas.style.cursor = 'grabbing'; }
-  else { canvas.style.cursor = 'default'; }
-});
-
-// =====================================================
-//  Main loop
-// =====================================================
-let lastTs = null;
-function tick(ts) {
-  if (lastTs == null) lastTs = ts;
-  const dt = Math.min(50, ts - lastTs);
-  lastTs = ts;
-  animT += dt;
-  sceneFadeT = Math.min(1, sceneFadeT + dt / 600);
-  const s = scenes[currentSceneIdx];
-  if (s.update) s.update(dt);
-  ctx.save();
-  ctx.fillStyle = '#0a0a0a';
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalAlpha = sceneFadeT;
-  s.draw(ctx, animT);
-  ctx.restore();
-  if (s.isInteractive && s.readout) updateReadout();
-  requestAnimationFrame(tick);
-}
-
-setScene(0);
-requestAnimationFrame(tick);
+init();
 </script>
 </body>
 </html>
