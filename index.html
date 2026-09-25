@@ -218,9 +218,9 @@ function bandName(nm) {
   if (nm < 590) return 'yellow'; if (nm < 620) return 'orange'; return 'red';
 }
 // Step 1 recap: one simplified silicon cell under a lamp (b = 0..100 %).
-// Illumination changes current; the cell chemistry sets the modeled voltage.
-const panelVolts = b => b <= 0 ? 0 : 0.5;
-const panelAmps = b => 0.5 * b / 100;
+// Light changes voltage a little (0.4 to 0.6 V) and current a lot (0.1 to 0.3 A).
+const panelVolts = b => b <= 0 ? 0 : 0.4 + 0.2 * b / 100;
+const panelAmps = b => b <= 0 ? 0 : 0.1 + 0.2 * b / 100;
 
 // Design lab: where 1000 W of sunlight goes inside one cell (simplified teaching model,
 // calibrated for comparison rather than prediction of a commercial panel)
@@ -322,7 +322,8 @@ const ICON = {
   play: icn('<polygon points="6 3 20 12 6 21 6 3"/>'),
   reset: icn('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>'),
   sun: icn('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
-  box: icn('<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/>')
+  box: icn('<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5"/><path d="M12 13v8"/>'),
+  copy: icn('<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>')
 };
 
 // ---- canvas drawing kit ----
@@ -467,7 +468,7 @@ const scenes = [];
 scenes.push({
   heading: 'What You Already Know',
   seeLabel: 'A sealed solar cell, a meter, and a fan',
-  notes: "<strong>A silicon solar cell produces about 0.5 V when it is illuminated.</strong> That voltage comes mainly from the cell's chemistry and junction. Brighter light adds more photons, so it produces more <strong>current</strong>, not more voltage. More current makes the fan spin faster. Now let's find out what is happening inside the cell.",
+  notes: "<strong>A silicon solar cell produces between 0.4 and 0.6 V when it is illuminated.</strong> That voltage comes mainly from the cell's materials and junction, so light only nudges it. Brighter light adds more photons, so the <strong>current</strong> climbs from about 0.1 A to 0.3 A. More current makes the fan spin faster. Now let's find out what is happening inside the cell.",
   notebook: "<strong>Record</strong> the volts and amps at 0%, 50%, and 100% light. Then <strong>predict</strong>: sketch what you think is inside the cell that turns light into a push on charges. Label your guess.",
   build(stage) {
     const st = sceneState('light', { b: 50, dark: false, full: false });
@@ -484,7 +485,7 @@ scenes.push({
       val.textContent = b + '%';
       if (b === 0 && !st.dark) { st.dark = true; setTask('dark', true); }
       if (b === 100 && !st.full) { st.full = true; setTask('full', true); }
-      status.innerHTML = b === 0 ? 'Light 0%: 0.0 V and 0.00 A. The fan stops.' : `Light ${b}%: <span class="mono">${V.toFixed(1)} V</span> of push and <span class="mono">${I.toFixed(2)} A</span> of flow.`;
+      status.innerHTML = b === 0 ? 'Light 0%: 0.00 V and 0.00 A. The fan stops.' : `Light ${b}%: <span class="mono">${V.toFixed(2)} V</span> of push and <span class="mono">${I.toFixed(2)} A</span> of flow.`;
       persistWork();
     }
     range.addEventListener('input', () => { st.b = +range.value; update(); });
@@ -517,7 +518,7 @@ scenes.push({
       ctx.save(); ctx.fillStyle = '#fff'; ctx.strokeStyle = '#d6d3d1'; ctx.lineWidth = 1.5; roundRect(ctx, 430, 128, 180, 120, 12); ctx.fill(); ctx.stroke();
       ctx.font = '700 10px Roboto Mono, monospace'; ctx.fillStyle = C.muted; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.fillText('VOLTAGE (PUSH)', 446, 150); ctx.fillText('CURRENT (FLOW)', 446, 204);
-      ctx.font = '700 24px Roboto Mono, monospace'; ctx.fillStyle = C.volt; ctx.fillText(V.toFixed(1) + ' V', 446, 176);
+      ctx.font = '700 24px Roboto Mono, monospace'; ctx.fillStyle = C.volt; ctx.fillText(V.toFixed(2) + ' V', 446, 176);
       ctx.fillStyle = C.amp; ctx.fillText(I.toFixed(2) + ' A', 446, 230);
       ctx.restore();
       // fan
@@ -528,7 +529,7 @@ scenes.push({
     currentTick = dt => {
       t += dt;
       const P = panelVolts(st.b) * panelAmps(st.b);
-      if (!REDUCED_MOTION) { ang += dt / 1000 * 16 * P / 3; flow += dt / 1000 * 220 * panelAmps(st.b); }
+      if (!REDUCED_MOTION) { ang += dt / 1000 * 16 * P / 2.2; flow += dt / 1000 * 360 * panelAmps(st.b); }
       draw();
     };
     draw();
@@ -556,11 +557,15 @@ scenes.push({
     setTask('open', st.open); setTask('layers', st.seen.length === LAYERS.length);
     const { c, ctx } = makeCanvas(stage, 860, 330, 'A solar cell separated into its six layers');
     const openBtn = el('button', { class: 'primary', html: ICON.box + ' Open the panel' });
+    const closeBtn = el('button', { html: ICON.reset + ' Close the box and reveal again' });
     const chips = LAYERS.map(L => el('button', { class: 'chip', 'aria-label': 'Show the ' + L.name }, L.name));
     const chipRow = el('div', { class: 'tool-row' }, chips);
     const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
-    stage.append(el('div', { class: 'tool-row' }, [openBtn]), chipRow, status);
-    let k = st.open ? 1 : 0, opening = false, t = 0;
+    stage.append(el('div', { class: 'tool-row' }, [openBtn, closeBtn]), chipRow, status);
+    // reveal: rumble (light leaks through cracks), flash, then the layers burst apart
+    let k = st.open ? 1 : 0, opening = false, closing = false, rumble = 0, flash = 0, t = 0;
+    const RUMBLE_MS = 1300;
+    const easeOutBack = x => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
     const drops = [];
     function select(i) {
       if (!st.open) return;
@@ -571,7 +576,8 @@ scenes.push({
       sync(); persistWork();
     }
     function sync() {
-      openBtn.hidden = st.open; chipRow.hidden = !st.open;
+      openBtn.hidden = st.open; closeBtn.hidden = !st.open; chipRow.hidden = !st.open;
+      openBtn.disabled = opening || closing; closeBtn.disabled = opening || closing;
       chips.forEach((ch, i) => { ch.classList.toggle('active', st.sel === LAYERS[i].id); ch.classList.toggle('done', st.seen.includes(LAYERS[i].id)); });
       const L = LAYERS.find(x => x.id === st.sel);
       if (!st.open) status.textContent = 'Predict first, then open the panel.';
@@ -579,9 +585,11 @@ scenes.push({
       else status.textContent = 'Tap each layer to learn its job.';
     }
     chips.forEach((ch, i) => ch.addEventListener('click', () => select(i)));
-    openBtn.addEventListener('click', () => { opening = true; openBtn.disabled = true; });
+    openBtn.addEventListener('click', () => { opening = true; rumble = 0; sync(); });
+    closeBtn.addEventListener('click', () => { closing = true; st.open = false; st.sel = null; sync(); persistWork(); });
     function layout() {
-      const gap = 16 * smooth(k), total = LAYERS.reduce((s, L) => s + L.h, 0) + gap * 5;
+      const e = opening ? easeOutBack(k) : smooth(k);
+      const gap = 16 * e, total = LAYERS.reduce((s, L) => s + L.h, 0) + gap * 5;
       let y = (330 - total) / 2 + 6;
       return LAYERS.map(L => { const r = { ...L, y }; y += L.h + gap; return r; });
     }
@@ -595,6 +603,10 @@ scenes.push({
     function draw() {
       ctx.clearRect(0, 0, 860, 330);
       const rows = layout();
+      const shaking = opening && rumble < RUMBLE_MS && !REDUCED_MOTION;
+      const amp = shaking ? 1 + 5 * (rumble / RUMBLE_MS) : 0;
+      ctx.save();
+      if (shaking) ctx.translate((Math.random() - 0.5) * amp, (Math.random() - 0.5) * amp);
       rows.forEach(L => {
         ctx.save();
         const on = st.sel === L.id;
@@ -619,7 +631,23 @@ scenes.push({
         ctx.fillStyle = '#fff'; ctx.font = '700 44px Roboto Serif, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('?', (X0 + X1) / 2, (top + bot) / 2);
         ctx.restore();
         drops.forEach(d => drawPhoton(ctx, d.x, d.y, 0, 1, 560, a));
+        // cracks of light while it rumbles
+        if (opening && rumble > 0) {
+          const q = Math.min(1, rumble / RUMBLE_MS), rr = seeded(11);
+          ctx.save(); ctx.globalAlpha = a; ctx.strokeStyle = rgba('#fde68a', 0.5 + 0.5 * q); ctx.lineWidth = 2 + 3 * q; ctx.lineCap = 'round';
+          ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 18 * q;
+          const nCracks = Math.ceil(q * 6);
+          for (let j = 0; j < nCracks; j++) {
+            let x = X0 + 30 + rr() * (X1 - X0 - 60), y = top - 8 + rr() * (bot - top + 16);
+            ctx.beginPath(); ctx.moveTo(x, y);
+            for (let s2 = 0; s2 < 4; s2++) { x += (rr() - 0.5) * 60; y += (rr() - 0.5) * 40; ctx.lineTo(clamp(x, X0 - 6, X1 + 6), clamp(y, top - 6, bot + 6)); }
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
       }
+      ctx.restore();
+      if (flash > 0) { ctx.save(); ctx.fillStyle = `rgba(255,251,235,${flash})`; ctx.fillRect(0, 0, 860, 330); ctx.restore(); }
       if (k > 0.6) {
         const a = (k - 0.6) / 0.4;
         ctx.save(); ctx.globalAlpha = a;
@@ -639,7 +667,12 @@ scenes.push({
     }
     currentTick = dt => {
       t += dt;
-      if (opening) { k = REDUCED_MOTION ? 1 : Math.min(1, k + dt / 1200); if (k >= 1) { opening = false; st.open = true; finishTask('open'); sync(); persistWork(); } }
+      flash = Math.max(0, flash - dt / 700);
+      if (opening) {
+        if (rumble < RUMBLE_MS && !REDUCED_MOTION) { rumble += dt; if (rumble >= RUMBLE_MS) flash = 0.95; }
+        else { k = REDUCED_MOTION ? 1 : Math.min(1, k + dt / 1400); if (k >= 1) { opening = false; st.open = true; finishTask('open'); sync(); persistWork(); } }
+      }
+      if (closing) { k = REDUCED_MOTION ? 0 : Math.max(0, k - dt / 900); if (k <= 0) { closing = false; sync(); } }
       if (!st.open && !REDUCED_MOTION) {
         if (Math.random() < 0.08) drops.push({ x: 150 + Math.random() * 390, y: 0 });
         drops.forEach(d => d.y += dt * 0.16);
@@ -656,14 +689,15 @@ scenes.push({
 scenes.push({
   heading: 'Light Frees an Electron',
   seeLabel: 'Fire photons at silicon',
-  notes: "<strong>Wavelength tells you how much energy one photon carries.</strong> Shorter wavelengths have more energy. In silicon, a photon needs at least 1.1 eV to excite an electron across the band gap and create an electron-hole pair. The calculation <strong>E = 1240 ÷ wavelength</strong> connects nanometers to electron volts. Use it to read the visual, not as a formula to memorize.",
-  notebook: "<strong>Predict first:</strong> will ten low-energy infrared photons excite an electron when one can't? Write yes or no and why. Test three wavelengths and <strong>record</strong> the nanometers, color or infrared band, and whether an electron was excited. Calculate the energy for <strong>one</strong> of your trials.",
+  notes: "<strong>Wavelength decides whether light can generate charge at all.</strong> Shorter wavelengths carry more energy per photon. Silicon needs at least <strong>1.1 eV</strong> to free an electron and leave a hole, which means light shorter than about <strong>1100 nm</strong>. Below that line, each photon frees one electron. Above it, no photon frees anything, no matter how many arrive. <strong>E = 1240 ÷ wavelength</strong> connects nanometers to electron volts.",
+  notebook: "<strong>Predict first:</strong> sketch a graph with wavelength (400 to 1400 nm) across the bottom and electrons freed per 10 photons up the side. Then fire ten photons at <strong>four or more</strong> wavelengths and copy the real graph next to your guess. <strong>Write</strong> one sentence: how does the wavelength of light affect charge generation?",
   build(stage) {
-    const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false });
-    requireTask('free', 'Free an electron with one photon');
-    requireTask('miss', 'Fire a photon with less than 1.1 eV');
+    const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false, pts: [] });
+    st.pts ||= [];
     requireTask('ten', 'Fire ten photons with less than 1.1 eV at once');
-    setTask('free', st.free); setTask('miss', st.miss); setTask('ten', st.ten);
+    requireTask('graph', 'Graph four or more wavelengths, on both sides of the threshold');
+    const graphDone = () => st.pts.length >= 4 && st.pts.some(p => p.per10 > 0) && st.pts.some(p => p.per10 === 0);
+    setTask('ten', st.ten); setTask('graph', graphDone());
     const scene = current;
     const { ctx } = makeCanvas(stage, 860, 330, 'Silicon atoms held together by bonds of shared outer electrons, with photons arriving');
     const range = el('input', { type: 'range', min: 400, max: 1400, step: 10, value: st.nm, 'aria-label': 'Photon wavelength in nanometers' });
@@ -674,6 +708,46 @@ scenes.push({
     const formula = el('p', { class: 'status-line' });
     const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
     stage.append(el('div', { class: 'slider-row' }, [el('label', {}, 'Wavelength'), range, val]), formula, el('div', { class: 'tool-row' }, [one, ten, reset]), status);
+    const gr = makeCanvas(stage, 860, 230, 'Graph of wavelength versus electrons freed per 10 photons, built from your trials');
+    const clearGraph = el('button', { html: ICON.reset + ' Clear the graph' });
+    stage.append(el('div', { class: 'tool-row' }, [clearGraph]));
+    clearGraph.addEventListener('click', () => { st.pts = []; setTask('graph', false, scene); drawGraph(); persistWork(); });
+    function drawGraph() {
+      const g = gr.ctx, GX0 = 90, GX1 = 820, GY0 = 30, GY1 = 176;
+      const gx = nm => lerp(GX0, GX1, (nm - 400) / 1000), gy = v => lerp(GY1, GY0, v / 10);
+      g.clearRect(0, 0, 860, 230);
+      // spectrum strip under the axis
+      for (let nm = 400; nm < 1400; nm += 5) { g.fillStyle = wlColor(nm, nm > 750 ? 0.35 : 0.8); g.fillRect(gx(nm), GY1 + 4, gx(nm + 5) - gx(nm) + 0.5, 8); }
+      g.save(); g.strokeStyle = '#e7e5e4'; g.lineWidth = 1;
+      [0, 5, 10].forEach(v => { g.beginPath(); g.moveTo(GX0, gy(v)); g.lineTo(GX1, gy(v)); g.stroke(); });
+      g.strokeStyle = C.ink; g.lineWidth = 1.5; g.beginPath(); g.moveTo(GX0, GY0 - 6); g.lineTo(GX0, GY1); g.lineTo(GX1 + 6, GY1); g.stroke();
+      g.fillStyle = C.muted; g.font = '600 12px Inter, sans-serif'; g.textBaseline = 'middle';
+      g.textAlign = 'right'; [0, 5, 10].forEach(v => g.fillText(String(v), GX0 - 8, gy(v)));
+      g.textAlign = 'center'; [400, 600, 800, 1000, 1200, 1400].forEach(nm => g.fillText(String(nm), gx(nm), GY1 + 24));
+      g.font = '700 10px Roboto Mono, monospace'; g.fillText('WAVELENGTH (nm)', (GX0 + GX1) / 2, GY1 + 44);
+      g.save(); g.translate(22, (GY0 + GY1) / 2); g.rotate(-Math.PI / 2); g.fillText('ELECTRONS FREED PER 10 PHOTONS', 0, 0); g.restore();
+      g.restore();
+      // the threshold appears once your data brackets it
+      if (graphDone()) {
+        const tx = gx(1240 / BAND_GAP);
+        g.save(); g.strokeStyle = C.ink; g.setLineDash([5, 4]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(tx, GY0 - 6); g.lineTo(tx, GY1); g.stroke(); g.restore();
+        drawPill(g, '1.1 eV threshold, about 1100 nm', tx, GY0 - 12, C.ink, 11);
+      } else if (!st.pts.length) {
+        g.fillStyle = C.muted; g.font = '600 14px Inter, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('Fire photons to plot your first point.', (GX0 + GX1) / 2, (GY0 + GY1) / 2);
+      }
+      st.pts.forEach(p => {
+        const x = gx(p.nm), y = gy(p.per10);
+        g.fillStyle = wlColor(p.nm); g.strokeStyle = C.ink; g.lineWidth = 1.5;
+        g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill(); g.stroke();
+      });
+    }
+    function plot(nm, per10) {
+      st.pts = st.pts.filter(p => p.nm !== nm); st.pts.push({ nm, per10 });
+      if (graphDone()) finishTask('graph', scene);
+      drawGraph(); persistWork();
+    }
+    drawGraph();
     // lattice
     const atoms = [];
     for (let r = 0; r < 3; r++) for (let cc = 0; cc < 5; cc++) atoms.push({ x: 300 + 110 * cc, y: 80 + 90 * r });
@@ -727,12 +801,13 @@ scenes.push({
     function finishBatch(bt) {
       if (scene !== current) return;
       const E = photonEV(bt.nm);
+      plot(bt.nm, Math.round(bt.freed / bt.n * 10));
       if (bt.n === 1) {
-        if (bt.freed) { finishTask('free', scene); status.innerHTML = `One photon, one electron freed. It carried <span class="mono">${E.toFixed(2)} eV</span>, so <span class="mono">${(E - BAND_GAP).toFixed(2)} eV</span> became heat.`; }
-        else { finishTask('miss', scene); status.innerHTML = `The <span class="mono">${E.toFixed(2)} eV</span> photon passed straight through. Nothing was freed.`; }
+        if (bt.freed) { st.free = true; status.innerHTML = `One photon, one electron freed. It carried <span class="mono">${E.toFixed(2)} eV</span>, so <span class="mono">${(E - BAND_GAP).toFixed(2)} eV</span> became heat.`; }
+        else { st.miss = true; status.innerHTML = `The <span class="mono">${E.toFixed(2)} eV</span> photon passed straight through. Nothing was freed.`; }
       } else {
         if (bt.freed) status.textContent = `Ten photons freed ${bt.freed} electrons. One photon frees one electron.`;
-        else { finishTask('ten', scene); status.innerHTML = `Ten <span class="mono">${E.toFixed(2)} eV</span> photons, zero electrons freed. More photons do not make each one stronger.`; }
+        else { st.ten = true; finishTask('ten', scene); status.innerHTML = `Ten <span class="mono">${E.toFixed(2)} eV</span> photons, zero electrons freed. More photons do not make each one stronger.`; }
       }
     }
     function draw() {
@@ -804,7 +879,7 @@ const PEOPLE = ['#fca5a5', '#fdba74', '#86efac', '#93c5fd', '#fcd34d', '#f9a8d4'
 scenes.push({
   heading: 'Holes Move Too',
   seeLabel: 'Slide people into the empty seat',
-  notes: "<strong>A hole is a missing electron, and it can move.</strong> When a neighbor electron hops into a hole, the hole jumps to where that electron was. Picture a full row with one empty seat: as each person slides over one seat, the empty seat travels the other way. Electrons drift one way, holes drift the other, and both carry current.",
+  notes: "<strong>A hole is a missing electron, and it can move.</strong> When a neighbor electron hops into a hole, the hole jumps to where that electron was. Picture a full row with one empty seat: as each person slides over one seat, the empty seat travels the other way. <strong>Both carry charge.</strong> An electron carries a negative charge. A hole is a spot missing a negative charge, so it acts like a <strong>positive</strong> charge. Only electrons actually move, but tracking the hole is an easy way to follow all of those hops at once.",
   notebook: "<strong>Predict first:</strong> if people keep sliding right, which way will the empty seat travel? Then move it to the far left end. <strong>Draw</strong> the row before and after, with an arrow for the people and an arrow for the empty seat.",
   build(stage) {
     const st = sceneState('seats', { e: 7, order: [0, 1, 2, 3, 4, 5, 6, -1], moves: 0 });
@@ -821,7 +896,7 @@ scenes.push({
     function sync() {
       slide.disabled = st.e === 0 || !!anim;
       status.innerHTML = st.e === 0
-        ? `The empty seat reached the far left after <span class="mono">${st.moves}</span> moves. Every person moved one seat to the right.`
+        ? `The empty seat reached the far left after <span class="mono">${st.moves}</span> moves. Every person moved one seat right, but the empty seat crossed the whole row.`
         : st.moves === 0 ? 'Tap the person next to the empty seat, or use the button.'
         : `Empty seat is now seat <span class="mono">${st.e + 1}</span> of 8. People have slid right <span class="mono">${st.moves}</span> times.`;
     }
@@ -876,8 +951,8 @@ scenes.push({
           ctx.font = '600 12px Inter, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, (x1 + x2) / 2, y - 12);
           ctx.restore();
         };
-        arrow(300, 420, 290, C.electron, 'electrons move right');
-        arrow(560, 440, 290, C.hole, 'hole moves left');
+        arrow(300, 420, 290, C.electron, 'negative electrons move right');
+        arrow(560, 440, 290, C.hole, 'positive hole moves left');
       }
     }
     currentTick = dt => {
@@ -901,7 +976,7 @@ scenes.push({
   heading: 'Make n-type and p-type',
   seeLabel: 'Swap in phosphorus or boron atoms',
   notes: "<strong>Engineers add a few other atoms to silicon. This is called doping.</strong> Silicon has 4 outer electrons. <strong>Phosphorus</strong> has 5, so it brings one extra free electron: <strong>n-type</strong>. <strong>Boron</strong> has 3, so it leaves a hole: <strong>p-type</strong>. Both slabs stay neutral, because every atom brings as many protons as electrons.",
-  notebook: "<strong>Predict first:</strong> will n-type silicon have a negative charge overall? Write your guess. Then dope both slabs and read the net charge. <strong>Draw</strong> one phosphorus atom and one boron atom with their outer electrons, and circle the extra electron and the hole.",
+  notebook: "<strong>Predict first:</strong> what do you think the <strong>n</strong> and <strong>p</strong> stand for? After doping, will n-type silicon have a negative charge, a positive charge, or no charge overall? Write both guesses. Then dope both slabs and read the net charge. <strong>Draw</strong> one phosphorus atom and one boron atom with their outer electrons, and circle the extra electron and the hole.",
   build(stage) {
     const st = sceneState('dope', { left: Array(12).fill('Si'), right: Array(12).fill('Si'), dop: 'P' });
     requireTask('n', 'Make the left slab n-type (2 or more phosphorus, no boron)');
@@ -925,7 +1000,9 @@ scenes.push({
       let msg;
       if (count(st.left, 'B')) msg = 'The left slab has boron. Boron adds holes, so it cannot make n-type.';
       else if (count(st.right, 'P')) msg = 'The right slab has phosphorus. Phosphorus adds free electrons, so it cannot make p-type.';
-      else if (nOK && pOK) msg = 'Left slab is n-type and right slab is p-type. Both are still neutral.';
+      else if (nOK && pOK) msg = 'This is called n-type (n for its extra negative electrons) and this is called p-type (p for its positive holes). Overall, both slabs are still neutral.';
+      else if (nOK) msg = 'The left slab is now called n-type: n for its extra negative electrons. Now make the right slab p-type.';
+      else if (pOK) msg = 'The right slab is now called p-type: p for its positive holes. Now make the left slab n-type.';
       else msg = 'Pick an atom, then tap silicon atoms in a slab to swap them.';
       status.textContent = msg;
       persistWork();
@@ -1002,13 +1079,20 @@ scenes.push({
     const { c, ctx } = makeCanvas(stage, 860, 360, 'An n-type slab and a p-type slab that form a junction when they touch');
     const joinBtn = el('button', { class: 'primary' }, 'Join the slabs');
     const hillBtn = el('button', { 'aria-pressed': String(st.hill) }, 'Show the energy hill');
+    const sepBtn = el('button', { html: ICON.reset + ' Pull the slabs apart' });
     const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
-    stage.append(el('div', { class: 'tool-row' }, [joinBtn, hillBtn]), status);
+    stage.append(el('div', { class: 'tool-row' }, [joinBtn, hillBtn, sepBtn]), status);
     const SLAB_W = 300, PX = 430, JOIN_X = PX - SLAB_W, START_X = 50, Y0 = 44, H = 170;
-    const rnd = seeded(7);
     let nX = st.joined ? JOIN_X : START_X, sliding = false, phase = st.joined ? 'done' : 'apart', dk = 0, t = 0;
-    let electrons = Array.from({ length: 12 }, () => ({ rx: 20 + rnd() * 260, y: Y0 + 20 + rnd() * (H - 40) }));
-    let holes = Array.from({ length: 12 }, () => ({ x: PX + 20 + rnd() * 260, y: Y0 + 20 + rnd() * (H - 40) }));
+    let electrons, holes;
+    function freshCarriers() {
+      const rnd = seeded(7);
+      electrons = Array.from({ length: 12 }, () => ({ rx: 20 + rnd() * 260, y: Y0 + 20 + rnd() * (H - 40) }));
+      holes = Array.from({ length: 12 }, () => ({ x: PX + 20 + rnd() * 260, y: Y0 + 20 + rnd() * (H - 40) }));
+    }
+    freshCarriers();
+    // electrons cross one at a time so the junction builds up slowly
+    const STAGGER = 0.16, moverK = i => smooth(clamp((dk - i * STAGGER) / 0.45, 0, 1));
     const ionYs = [Y0 + 30, Y0 + 70, Y0 + 110, Y0 + 150];
     let movers = [];
     function settle() {
@@ -1021,6 +1105,7 @@ scenes.push({
     function sync() {
       joinBtn.disabled = phase !== 'apart';
       hillBtn.disabled = phase !== 'done';
+      sepBtn.disabled = phase !== 'done';
       hillBtn.textContent = st.hill ? 'Hide the energy hill' : 'Show the energy hill';
       hillBtn.setAttribute('aria-pressed', String(st.hill));
       status.textContent = phase === 'apart' ? 'Drag the n-type slab until it touches the p-type slab.'
@@ -1032,6 +1117,7 @@ scenes.push({
       phase = 'crossing'; dk = 0; nX = JOIN_X; settle(); sync();
     }
     joinBtn.addEventListener('click', () => { if (phase === 'apart') { sliding = true; joinBtn.disabled = true; } });
+    sepBtn.addEventListener('click', () => { if (phase !== 'done') return; phase = 'apart'; nX = START_X; movers = []; dk = 0; freshCarriers(); sync(); });
     hillBtn.addEventListener('click', () => { st.hill = !st.hill; if (st.hill) finishTask('hill', scene); persistWork(); sync(); });
     let drag = null;
     c.addEventListener('pointerdown', e => {
@@ -1059,7 +1145,7 @@ scenes.push({
       if (phase !== 'apart') {
         const a = phase === 'done' ? 1 : dk;
         ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = rgba(C.field, 0.10); ctx.fillRect(PX - 42, Y0, 84, H); ctx.restore();
-        ionYs.forEach(y => { ctx.save(); ctx.globalAlpha = a; drawIon(ctx, PX - 22, y, +1); drawIon(ctx, PX + 22, y, -1); ctx.restore(); });
+        ionYs.forEach((y, i) => { const ia = phase === 'done' ? 1 : clamp((moverK(i) - 0.7) / 0.3, 0, 1); if (!ia) return; ctx.save(); ctx.globalAlpha = ia; drawIon(ctx, PX - 22, y, +1); drawIon(ctx, PX + 22, y, -1); ctx.restore(); });
         if (phase === 'done') {
           drawPill(ctx, 'junction', PX, 22, C.field, 12);
           // field arrows: point from + to -, and show the push on electrons
@@ -1073,8 +1159,8 @@ scenes.push({
       }
       electrons.forEach((e, i) => drawElectron(ctx, nX + e.rx + Math.sin(t / 500 + i) * 4, e.y + Math.cos(t / 610 + i) * 4, 7));
       holes.forEach((h, i) => drawHole(ctx, h.x + Math.sin(t / 540 + i) * 4, h.y + Math.cos(t / 470 + i) * 4, 7));
-      movers.forEach(m => {
-        const k = smooth(clamp(dk * 1.3, 0, 1));
+      movers.forEach((m, i) => {
+        const k = moverK(i);
         const ex = lerp(nX + m.ex0, PX + 22, k), ey = lerp(m.ey0, m.ty, k);
         if (k < 1) { drawHole(ctx, lerp(m.h.x, PX + 22, k), lerp(m.h.y, m.ty, k), 7, 1 - k * 0.8); drawElectron(ctx, ex, ey, 7); }
       });
@@ -1099,9 +1185,9 @@ scenes.push({
     }
     currentTick = dt => {
       t += REDUCED_MOTION ? 0 : dt;
-      if (sliding) { nX = Math.min(JOIN_X, nX + (REDUCED_MOTION ? 999 : dt * 0.25)); if (nX >= JOIN_X) { sliding = false; touch(); } }
+      if (sliding) { nX = Math.min(JOIN_X, nX + (REDUCED_MOTION ? 999 : dt * 0.1)); if (nX >= JOIN_X) { sliding = false; touch(); } }
       if (phase === 'crossing') {
-        dk = Math.min(1, dk + (REDUCED_MOTION ? 1 : dt / 2200));
+        dk = Math.min(1, dk + (REDUCED_MOTION ? 1 : dt / 6000));
         if (dk >= 1) { phase = 'done'; movers = []; st.joined = true; finishTask('join', scene); persistWork(); sync(); }
       }
       draw();
@@ -1115,7 +1201,7 @@ scenes.push({
   heading: 'Power the Fan',
   seeLabel: 'Click the silicon to free electron-hole pairs',
   notes: "<strong>The junction splits electron-hole pairs, and that split is the current.</strong> A pair freed near the junction gets pulled apart: the electron goes up to the metal fingers, the hole goes down. With the circuit closed, electrons flow through the wire, spin the fan, and return through the back contact to fill holes. Pairs freed too far away usually find each other again, and the energy becomes heat.",
-  notebook: "<strong>Predict first:</strong> will a pair freed deep in the cell reach the fan? Test a near click and a far click, then close the switch and power the fan. <strong>Draw</strong> the full loop: photon, pair, junction push, fingers, wire, fan, back contact.",
+  notebook: "<strong>Predict first:</strong> will a pair freed deep in the cell reach the fan? Test a near click and a far click, then close the switch and power the fan. <strong>Draw</strong> the full loop: photon, pair, junction push, fingers, wire, fan, back contact. Then <strong>apply</strong> what you learned about wavelengths: what are two details that could affect a solar cell's efficiency?",
   build(stage) {
     const st = sceneState('fan', { closed: false, delivered: 0, lost: 0, near: false, far: false });
     requireTask('near', 'Free a pair near the junction and watch it split');
@@ -1268,9 +1354,23 @@ function buildLab(stage, mode) {
   ];
   const run = el('button', { class: 'primary', html: ICON.play + ' Run test' });
   const clear = el('button', { html: ICON.reset + ' Clear trials' });
+  const copy = el('button', { html: ICON.copy + ' Copy for Google Sheets' });
   const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
   const log = el('div', { class: 'run-log' });
-  stage.append(...rows.map(r => r.row), el('div', { class: 'tool-row' }, [run, clear]), status, log);
+  stage.append(...rows.map(r => r.row), el('div', { class: 'tool-row' }, [run, clear, copy]), status, log);
+  // tab-separated rows paste straight into Google Sheets as columns
+  copy.addEventListener('click', async () => {
+    if (!st.rows.length) { status.textContent = 'Run a trial first, then copy your data.'; return; }
+    const tsv = ['Trial\tSurface\tFinger spacing (mm)\tThickness (µm)\tEfficiency (%)',
+      ...st.rows.map((r, i) => [i + 1, SURFACES.find(x => x.id === r.surface).name, r.spacing, r.thick, r.eff.toFixed(1)].join('\t'))].join('\n');
+    let ok = false;
+    try { await navigator.clipboard.writeText(tsv); ok = true; } catch (e) {
+      const ta = el('textarea', { style: 'position:fixed;opacity:0' }); ta.value = tsv; document.body.append(ta); ta.select();
+      try { ok = document.execCommand('copy'); } catch (e2) {} ta.remove();
+    }
+    status.className = 'status-line';
+    status.textContent = ok ? `Copied ${st.rows.length} ${st.rows.length === 1 ? 'trial' : 'trials'}. In Google Sheets, click cell A1 and paste. Then Insert, Chart.` : 'Could not copy. Type your table into Google Sheets instead.';
+  });
   function syncChips() {
     rows.forEach(r => r.chips.forEach((ch, i) => { const v = r.key === 'surface' ? r.items[i].id : r.items[i]; const on = d[r.key] === v; ch.classList.toggle('active', on); ch.setAttribute('aria-pressed', String(on)); }));
   }
@@ -1375,15 +1475,8 @@ scenes.push({
   heading: 'Design a Fair Test',
   seeLabel: 'Test one variable inside the cell',
   notes: "<strong>Engineers improve cells by changing what is inside them.</strong> You can change three things: the surface coating, how far apart the metal fingers are, and how thick the silicon is. A <strong>fair test</strong> changes only one variable and keeps the others the same. <strong>Efficiency</strong> is the percent of sunlight energy that comes out as electricity. The values here come from a simplified comparison model, not measurements of a commercial panel.",
-  notebook: "Pick <strong>one</strong> variable. <strong>Write</strong> your question and your hypothesis first. <strong>Make a table</strong>: trial, setting, efficiency. Run at least three trials that change only that variable. Then <strong>explain</strong> your result in one sentence using what you learned in Steps 2 to 7.",
+  notebook: "Pick <strong>one</strong> variable. <strong>Write</strong> your question and your hypothesis first. <strong>Make a table</strong>: trial, setting, efficiency. Run at least three trials that change only that variable. Tap <strong>Copy for Google Sheets</strong>, paste into a new sheet, and <strong>graph</strong> your setting against efficiency. Then <strong>explain</strong> your result in one sentence using what you learned in Steps 2 to 7.",
   build(stage) { buildLab(stage, 'fair'); }
-});
-scenes.push({
-  heading: 'Build the Best Cell',
-  seeLabel: 'Combine your findings into one design',
-  notes: "<strong>Every choice inside a cell is a trade-off.</strong> Something that saves energy in one place can lose it somewhere else. Use your fair test and your classmates' results to find the best setting for all three variables. The goal is a cell that turns <strong>20 percent</strong> or more of the sunlight into electricity.",
-  notebook: "Share results with classmates who tested other variables. <strong>Predict</strong> the best design before you run it. <strong>Record</strong> every design you try and circle the winner. For each of its three settings, write one sentence on why it beats the others.",
-  build(stage) { buildLab(stage, 'best'); }
 });
 
 // ---- Practice: 10 questions, one at a time ----
@@ -1515,6 +1608,15 @@ scenes.push({
   }
 });
 
+// ---- Class discussion: build the best cell ----
+scenes.push({
+  heading: 'Build the Best Cell',
+  seeLabel: 'Class discussion: combine everyone\'s findings',
+  notes: "<strong>Every choice inside a cell is a trade-off.</strong> Something that saves energy in one place can lose it somewhere else. No one group tested everything, so the class has to pool its fair tests to find the best setting for all three variables. The goal is a cell that turns <strong>20 percent</strong> or more of the sunlight into electricity.",
+  notebook: "<strong>With your group, on a whiteboard:</strong> post your fair test result, then gather the other groups' results. <strong>Predict</strong> the best design before you run it. Test it here, then be ready to <strong>share out</strong> one sentence for each setting explaining why it beats the others.",
+  build(stage) { buildLab(stage, 'best'); }
+});
+
 // ---- What questions do you still have? ----
 scenes.push({
   heading: 'What Questions Do You Still Have?',
@@ -1569,7 +1671,7 @@ try { if (_tParam === '1') localStorage.setItem('solar_teacher', '1'); if (_tPar
 let TEACHER = _tParam === '1';
 if (_tParam !== '0') { try { TEACHER = TEACHER || localStorage.getItem('solar_teacher') === '1'; } catch (e) {} }
 
-const WORK_KEY = 'solar-engineering-work-v2';
+const WORK_KEY = 'solar-engineering-work-v3';
 let WORK = {};
 try { const parsed = JSON.parse(localStorage.getItem(WORK_KEY)); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) WORK = parsed; } catch (e) { WORK = {}; }
 let workTimer = null, storageOK = true;
