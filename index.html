@@ -689,14 +689,14 @@ scenes.push({
 scenes.push({
   heading: 'Light Frees an Electron',
   seeLabel: 'Fire photons at silicon',
-  notes: "<strong>Wavelength decides whether light can generate charge at all.</strong> Shorter wavelengths carry more energy per photon. Silicon needs at least <strong>1.1 eV</strong> to free an electron and leave a hole, which means light shorter than about <strong>1100 nm</strong>. Below that line, each photon frees one electron. Above it, no photon frees anything, no matter how many arrive. <strong>E = 1240 ÷ wavelength</strong> connects nanometers to electron volts.",
-  notebook: "<strong>Predict first:</strong> sketch a graph with wavelength (400 to 1400 nm) across the bottom and electrons freed per 10 photons up the side. Then fire ten photons at <strong>four or more</strong> wavelengths and copy the real graph next to your guess. <strong>Write</strong> one sentence: how does the wavelength of light affect charge generation?",
+  notes: "<strong>Wavelength decides whether light can generate charge at all.</strong> Shorter wavelengths carry more energy per photon. Silicon needs at least <strong>1.1 eV</strong> to free an electron and leave a hole, which means light shorter than about <strong>1100 nm</strong>. Below that line, each photon frees one electron. Above it, no photon frees anything, no matter how many arrive. Each freed electron carries <strong>1.6 × 10<sup>−19</sup> C</strong> of charge. <strong>E = 1240 ÷ wavelength</strong> connects nanometers to electron volts.",
+  notebook: "<strong>Predict first:</strong> sketch a graph with wavelength (400 to 1400 nm) across the bottom and <strong>charge generated</strong> up the side. Then fire ten photons at <strong>four or more</strong> wavelengths and copy the real graph next to your guess. <strong>Write</strong> one sentence: how does the wavelength of light affect charge generation?",
   build(stage) {
     const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false, pts: [] });
-    st.pts ||= [];
+    st.pts = (st.pts || []).filter(p => p.q != null);
     requireTask('ten', 'Fire ten photons with less than 1.1 eV at once');
     requireTask('graph', 'Graph four or more wavelengths, on both sides of the threshold');
-    const graphDone = () => st.pts.length >= 4 && st.pts.some(p => p.per10 > 0) && st.pts.some(p => p.per10 === 0);
+    const graphDone = () => st.pts.length >= 4 && st.pts.some(p => p.q > 0) && st.pts.some(p => p.q === 0);
     setTask('ten', st.ten); setTask('graph', graphDone());
     const scene = current;
     const { ctx } = makeCanvas(stage, 860, 330, 'Silicon atoms held together by bonds of shared outer electrons, with photons arriving');
@@ -708,24 +708,24 @@ scenes.push({
     const formula = el('p', { class: 'status-line' });
     const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
     stage.append(el('div', { class: 'slider-row' }, [el('label', {}, 'Wavelength'), range, val]), formula, el('div', { class: 'tool-row' }, [one, ten, reset]), status);
-    const gr = makeCanvas(stage, 860, 230, 'Graph of wavelength versus electrons freed per 10 photons, built from your trials');
+    const gr = makeCanvas(stage, 860, 230, 'Graph of wavelength versus charge generated, built from your trials');
     const clearGraph = el('button', { html: ICON.reset + ' Clear the graph' });
-    stage.append(el('div', { class: 'tool-row' }, [clearGraph]));
+    stage.append(el('p', { class: 'caption', html: 'Each point is one burst of ten photons. Every freed electron adds 1.6 × 10<sup>−19</sup> C.' }), el('div', { class: 'tool-row' }, [clearGraph]));
     clearGraph.addEventListener('click', () => { st.pts = []; setTask('graph', false, scene); drawGraph(); persistWork(); });
     function drawGraph() {
       const g = gr.ctx, GX0 = 90, GX1 = 820, GY0 = 30, GY1 = 176;
-      const gx = nm => lerp(GX0, GX1, (nm - 400) / 1000), gy = v => lerp(GY1, GY0, v / 10);
+      const gx = nm => lerp(GX0, GX1, (nm - 400) / 1000), Q_MAX = 16, gy = v => lerp(GY1, GY0, v / Q_MAX);
       g.clearRect(0, 0, 860, 230);
       // spectrum strip under the axis
       for (let nm = 400; nm < 1400; nm += 5) { g.fillStyle = wlColor(nm, nm > 750 ? 0.35 : 0.8); g.fillRect(gx(nm), GY1 + 4, gx(nm + 5) - gx(nm) + 0.5, 8); }
       g.save(); g.strokeStyle = '#e7e5e4'; g.lineWidth = 1;
-      [0, 5, 10].forEach(v => { g.beginPath(); g.moveTo(GX0, gy(v)); g.lineTo(GX1, gy(v)); g.stroke(); });
+      [0, 8, 16].forEach(v => { g.beginPath(); g.moveTo(GX0, gy(v)); g.lineTo(GX1, gy(v)); g.stroke(); });
       g.strokeStyle = C.ink; g.lineWidth = 1.5; g.beginPath(); g.moveTo(GX0, GY0 - 6); g.lineTo(GX0, GY1); g.lineTo(GX1 + 6, GY1); g.stroke();
       g.fillStyle = C.muted; g.font = '600 12px Inter, sans-serif'; g.textBaseline = 'middle';
-      g.textAlign = 'right'; [0, 5, 10].forEach(v => g.fillText(String(v), GX0 - 8, gy(v)));
+      g.textAlign = 'right'; [0, 8, 16].forEach(v => g.fillText(String(v), GX0 - 8, gy(v)));
       g.textAlign = 'center'; [400, 600, 800, 1000, 1200, 1400].forEach(nm => g.fillText(String(nm), gx(nm), GY1 + 24));
       g.font = '700 10px Roboto Mono, monospace'; g.fillText('WAVELENGTH (nm)', (GX0 + GX1) / 2, GY1 + 44);
-      g.save(); g.translate(22, (GY0 + GY1) / 2); g.rotate(-Math.PI / 2); g.fillText('ELECTRONS FREED PER 10 PHOTONS', 0, 0); g.restore();
+      g.save(); g.translate(22, (GY0 + GY1) / 2); g.rotate(-Math.PI / 2); g.fillText('CHARGE GENERATED (× 10⁻¹⁹ C)', 0, 0); g.restore();
       g.restore();
       // the threshold appears once your data brackets it
       if (graphDone()) {
@@ -734,16 +734,16 @@ scenes.push({
         drawPill(g, '1.1 eV threshold, about 1100 nm', tx, GY0 - 12, C.ink, 11);
       } else if (!st.pts.length) {
         g.fillStyle = C.muted; g.font = '600 14px Inter, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText('Fire photons to plot your first point.', (GX0 + GX1) / 2, (GY0 + GY1) / 2);
+        g.fillText('Fire ten photons to plot your first point.', (GX0 + GX1) / 2, (GY0 + GY1) / 2);
       }
       st.pts.forEach(p => {
-        const x = gx(p.nm), y = gy(p.per10);
+        const x = gx(p.nm), y = gy(p.q);
         g.fillStyle = wlColor(p.nm); g.strokeStyle = C.ink; g.lineWidth = 1.5;
         g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill(); g.stroke();
       });
     }
-    function plot(nm, per10) {
-      st.pts = st.pts.filter(p => p.nm !== nm); st.pts.push({ nm, per10 });
+    function plot(nm, q) {
+      st.pts = st.pts.filter(p => p.nm !== nm); st.pts.push({ nm, q });
       if (graphDone()) finishTask('graph', scene);
       drawGraph(); persistWork();
     }
@@ -801,7 +801,7 @@ scenes.push({
     function finishBatch(bt) {
       if (scene !== current) return;
       const E = photonEV(bt.nm);
-      plot(bt.nm, Math.round(bt.freed / bt.n * 10));
+      if (bt.n === 10) plot(bt.nm, +(bt.freed * 1.6).toFixed(1));
       if (bt.n === 1) {
         if (bt.freed) { st.free = true; status.innerHTML = `One photon, one electron freed. It carried <span class="mono">${E.toFixed(2)} eV</span>, so <span class="mono">${(E - BAND_GAP).toFixed(2)} eV</span> became heat.`; }
         else { st.miss = true; status.innerHTML = `The <span class="mono">${E.toFixed(2)} eV</span> photon passed straight through. Nothing was freed.`; }
