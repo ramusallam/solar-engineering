@@ -10,6 +10,7 @@
   :root {
     /* Spark Learning companion tokens */
     --bgMain: #F7F3EE;
+    --bgPanel: #FFFFFF;
     --bgCard: #FFFFFF;
     --accentBlue: #6366f1;
     --accentBlueHover: #4f46e5;
@@ -24,6 +25,14 @@
     --borderSubtle: #F0EBE3;
     --shadow-sm: 0 1px 2px rgba(17,17,17,0.04), 0 1px 3px rgba(17,17,17,0.06);
     --shadow-md: 0 4px 12px rgba(17,17,17,0.06), 0 2px 4px rgba(17,17,17,0.04);
+    --shadow-lg: 0 16px 40px rgba(17,17,17,0.10), 0 4px 12px rgba(17,17,17,0.06);
+    --indigo-2: #818CF8;
+    --indigo-soft: rgba(99,102,241,0.09);
+    --indigo-line: rgba(99,102,241,0.30);
+    --amber: #B4791F;
+    --amber-soft: #FBF3E2;
+    --amber-line: #EBD9A8;
+    --line: #DDD1C3;
     --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
     --font-serif: 'Roboto Serif', Georgia, Cambria, serif;
     --font-mono: 'Roboto Mono', monospace;
@@ -33,12 +42,12 @@
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body { font-family: var(--font-sans); background: var(--bgMain); color: var(--textPrimary); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+  body { font-family: var(--font-sans); background: var(--bgMain); color: var(--textPrimary); min-height: 100vh; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
   sub, sup { font-size: 0.68em; line-height: 0; }
   [hidden] { display: none !important; }
 
   /* ---- compact indigo header ---- */
-  header { background: linear-gradient(145deg,#4f46e5,#6366f1); padding: 20px max(24px, calc((100vw - 1276px)/2)) 56px; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
+  header { background: linear-gradient(150deg,#4F46E5 0%,#6366F1 58%,#818CF8 100%); padding: 20px max(24px, calc((100vw - 1276px)/2)) 56px; position: relative; overflow: hidden; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
   header::before { content: ''; position: absolute; inset: 0; background: radial-gradient(circle, rgba(255,255,255,.09) 1px, transparent 2px); background-size: 30px 30px; pointer-events: none; }
   header .titles { position: relative; }
   header .eyebrow { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: #e0e7ff; margin-bottom: 4px; }
@@ -46,21 +55,29 @@
   .teacher-bar { position: relative; display: flex; align-items: center; gap: 10px; flex: none; }
   .teacher-bar[hidden] { display: none; }
   .tm-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: #fff; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4); padding: 6px 11px; border-radius: 999px; white-space: nowrap; }
-  #stepJump { font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--textPrimary); background: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 9px; padding: 9px 10px; max-width: 250px; min-height: 40px; }
+  #stepJump { font-family: var(--font-sans); font-size: 14px; font-weight: 600; color: var(--textPrimary); background: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 9px; padding: 9px 10px; max-width: 270px; min-height: 44px; box-shadow: var(--shadow-sm); }
 
   .progress-track { max-width: 1340px; margin: -40px auto 0; padding: 0 32px; position: relative; }
   .step-line { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; margin-bottom: 8px; }
   .step-line .num, .step-line .count { font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: #fff; white-space: nowrap; }
   .step-line .ttl { display: none; }
   .progress-track .bar { height: 5px; background: rgba(255,255,255,.3); border-radius: 999px; overflow: hidden; }
-  .progress-track .fill { height: 100%; width: 0%; background: #fff; border-radius: 999px; transition: width 350ms ease; }
+  .progress-track .fill { height: 100%; width: 0%; background: linear-gradient(90deg,#fff,#e0e7ff); border-radius: 999px; transition: width 350ms ease; }
 
   main { max-width: 1340px; margin: 0 auto; padding: 22px 32px 28px; }
   .workspace { display: grid; grid-template-columns: minmax(0,1.55fr) minmax(320px,.92fr); gap: 24px; align-items: start; }
-  .stage { background: var(--bgCard); border: 1px solid var(--borderColor); border-top: 4px solid var(--accentBlue); border-radius: 16px; box-shadow: var(--shadow-md); padding: 16px 18px; min-height: 440px; display: flex; flex-direction: column; animation: fadeUp .4s ease-out; }
+  .stage { background: var(--bgCard); border: 1px solid var(--borderColor); border-top: 4px solid var(--accentBlue); border-radius: 16px; box-shadow: var(--shadow-lg); padding: 16px 18px; min-height: 440px; display: flex; flex-direction: column; animation: fadeUp .4s ease-out; }
   .stage-label { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accentBlue); margin-bottom: 8px; }
   .stage-body { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   canvas { display: block; width: 100%; height: auto; max-height: 340px; object-fit: contain; border-radius: 12px; touch-action: none; }
+  canvas.photon-lattice { width: auto; max-width: 100%; max-height: 200px; align-self: center; }
+  canvas.photon-graph { width: auto; max-width: 100%; max-height: 215px; align-self: center; }
+  canvas.lab-canvas { width: auto; max-width: 100%; max-height: 230px; align-self: center; }
+  .photon-layout { gap: 7px; }
+  .photon-layout .status-line:empty { display: none; }
+  .graph-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .graph-meta .caption { text-align: left; }
+  .graph-meta button { min-height: 36px; padding: 6px 10px; font-size: 14px; flex: none; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
   .side { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 12px; }
@@ -81,7 +98,7 @@
   button.primary { background: var(--accentBlue); color: #fff; border-color: var(--accentBlue); box-shadow: 0 4px 14px rgba(99,102,241,0.28); }
   button.primary:hover:not(:disabled) { background: var(--accentBlueHover); border-color: var(--accentBlueHover); }
   button.primary:disabled { background: var(--borderColor); border-color: var(--borderColor); color: var(--textSecondary); box-shadow: none; opacity: 1; }
-  button:focus-visible, input:focus-visible, select:focus-visible, .step-heading:focus-visible { outline: 3px solid var(--accentBlueHover); outline-offset: 3px; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--accentBlueHover); outline-offset: 3px; }
   .btn-group { display: flex; gap: 10px; }
   button svg { vertical-align: -2px; }
 
@@ -107,7 +124,8 @@
 
   /* trial log (design lab) */
   .run-log { width: 100%; border: 1px solid var(--borderColor); border-radius: 10px; background: #fff; overflow: hidden; }
-  .run-log .row { display: grid; grid-template-columns: 34px 1.5fr 1fr 1fr 1fr; gap: 6px; padding: 7px 12px; font-size: 13px; border-bottom: 1px solid var(--borderSubtle); align-items: center; }
+  .run-log .row { display: grid; grid-template-columns: 34px minmax(0,1.5fr) repeat(3,minmax(0,1fr)); gap: 6px; padding: 7px 12px; font-size: 13px; border-bottom: 1px solid var(--borderSubtle); align-items: center; }
+  .run-log .row > span { min-width: 0; overflow-wrap: anywhere; }
   .run-log .row:last-child { border-bottom: none; }
   .run-log .row.head { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--textWarmMuted); font-weight: 700; }
   .run-log .n { font-family: var(--font-mono); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -122,7 +140,7 @@
   .pq-input { font-family: var(--font-mono); font-size: 24px; width: 100%; max-width: 360px; min-height: 52px; padding: 8px 12px; border: 1px solid var(--borderColor); border-radius: 10px; background: #fff; color: var(--textPrimary); }
   .pq-choices { display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
   .pq-choice { text-align: left; font-weight: 500; }
-  .pq-choice.active { border-color: var(--accentBlue); background: #eef2ff; font-weight: 700; }
+  .pq-choice.active { border-color: var(--accentBlue); background: var(--indigo-soft); font-weight: 700; }
   .pq-hint { font-size: 14px; color: var(--textWarmMuted); margin: 8px 0 0; }
   .pq-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
   .pq-feedback { min-height: 26px; font-size: 16px; line-height: 1.45; margin: 10px 0 0; font-weight: 600; }
@@ -148,6 +166,20 @@
     .teacher-bar { width: 100%; } #stepJump { flex: 1; max-width: none; }
     .tool-row .row-label { min-width: 0; width: 100%; text-align: center; }
     canvas { max-height: 300px; }
+    .graph-meta { align-items: flex-start; }
+  }
+  @media (max-width: 520px) {
+    .run-log .row { grid-template-columns: 26px minmax(0,1.35fr) repeat(3,minmax(0,1fr)); gap: 4px; padding: 7px 8px; font-size: 11px; }
+    .run-log .row.head { font-size: 8px; letter-spacing: .04em; }
+  }
+  @media (min-width: 981px) and (max-height: 760px) {
+    header { padding-top: 14px; padding-bottom: 48px; }
+    main { padding-top: 14px; padding-bottom: 4px; }
+    .workspace { gap: 18px; }
+    .stage { padding: 12px 16px; min-height: 410px; }
+    .side { gap: 10px; }
+    .notes-card { padding: 12px 18px; line-height: 1.48; }
+    .notebook-prompt { padding: 10px 14px; line-height: 1.4; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -209,6 +241,8 @@
 const BAND_GAP = 1.1;                        // eV needed to free an electron in silicon
 const photonEV = nm => 1240 / nm;           // E (eV) = 1240 / wavelength (nm)
 const frees = nm => photonEV(nm) >= BAND_GAP;
+const heatEV = nm => frees(nm) ? Math.max(0, photonEV(nm) - BAND_GAP) : 0;
+const batchHeatEV = (nm, n = 10) => n * heatEV(nm);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const lerp = (a, b, k) => a + (b - a) * k;
 const smooth = k => k * k * (3 - 2 * k);
@@ -423,7 +457,7 @@ function drawFan(ctx, x, y, r, angle, on) {
   ctx.rotate(angle);
   for (let i = 0; i < 3; i++) {
     ctx.rotate(Math.PI * 2 / 3);
-    ctx.fillStyle = on ? '#93c5fd' : '#cbd5e1'; ctx.strokeStyle = on ? '#3b82f6' : '#94a3b8'; ctx.lineWidth = 1.4;
+    ctx.fillStyle = on ? '#c7d2fe' : '#d6d3d1'; ctx.strokeStyle = on ? '#6366f1' : '#a8a29e'; ctx.lineWidth = 1.4;
     ctx.beginPath(); ctx.ellipse(0, -r * 0.52, r * 0.24, r * 0.5, 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
   }
   ctx.fillStyle = '#57534e'; ctx.beginPath(); ctx.arc(0, 0, r * 0.16, 0, Math.PI * 2); ctx.fill();
@@ -688,62 +722,68 @@ scenes.push({
 // ---- Light creates a mobile electron-hole pair (the photovoltaic effect begins) ----
 scenes.push({
   heading: 'Light Frees an Electron',
-  seeLabel: 'Fire photons at silicon',
-  notes: "<strong>Wavelength decides whether light can generate charge at all.</strong> Shorter wavelengths carry more energy per photon. Silicon needs at least <strong>1.1 eV</strong> to free an electron and leave a hole, which means light shorter than about <strong>1100 nm</strong>. Below that line, each photon frees one electron. Above it, no photon frees anything, no matter how many arrive. Each freed electron carries <strong>1.6 × 10<sup>−19</sup> C</strong> of charge. <strong>E = 1240 ÷ wavelength</strong> connects nanometers to electron volts.",
-  notebook: "<strong>Predict first:</strong> sketch a graph with wavelength (400 to 1400 nm) across the bottom and <strong>charge generated</strong> up the side. Then fire ten photons at <strong>four or more</strong> wavelengths and copy the real graph next to your guess. <strong>Write</strong> one sentence: how does the wavelength of light affect charge generation?",
+  seeLabel: 'Change wavelength. Measure heat.',
+  notes: "<strong>Wavelength controls what happens to a photon in silicon.</strong> Photons shorter than about <strong>1100 nm</strong> exceed silicon's <strong>1.1 eV</strong> band gap. In this simplified model, 1.1 eV creates an electron-hole pair, and any extra energy becomes heat. Longer-wavelength photons pass through, making neither a pair nor heat. Use <strong>E = 1240 ÷ wavelength</strong>.",
+  notebook: "<strong>Predict:</strong> sketch wavelength on the x-axis and heat generated on the y-axis. Keep the photon count at 10. Test <strong>four or more wavelengths</strong> on both sides of the threshold. <strong>Copy</strong> the graph, then <strong>write</strong> the pattern you found.",
   build(stage) {
-    const st = sceneState('photon', { nm: 550, free: false, miss: false, ten: false, pts: [] });
-    st.pts = (st.pts || []).filter(p => p.q != null);
-    requireTask('ten', 'Fire ten photons with less than 1.1 eV at once');
-    requireTask('graph', 'Graph four or more wavelengths, on both sides of the threshold');
-    const graphDone = () => st.pts.length >= 4 && st.pts.some(p => p.q > 0) && st.pts.some(p => p.q === 0);
+    stage.classList.add('photon-layout');
+    const st = sceneState('photon-heat-v1', { nm: 550, free: false, miss: false, ten: false, pts: [] });
+    st.pts = (st.pts || []).filter(p => p.heat != null);
+    requireTask('ten', 'Plot a 10-photon trial below the 1.1 eV threshold');
+    requireTask('graph', 'Graph heat at four or more wavelengths, on both sides of the threshold');
+    const graphDone = () => st.pts.length >= 4 && st.pts.some(p => p.heat > 0) && st.pts.some(p => p.heat === 0);
     setTask('ten', st.ten); setTask('graph', graphDone());
     const scene = current;
-    const { ctx } = makeCanvas(stage, 860, 330, 'Silicon atoms held together by bonds of shared outer electrons, with photons arriving');
+    const lattice = makeCanvas(stage, 860, 330, 'Silicon atoms held together by bonds of shared outer electrons, with photons arriving');
+    lattice.c.classList.add('photon-lattice');
+    const { ctx } = lattice;
     const range = el('input', { type: 'range', min: 400, max: 1400, step: 10, value: st.nm, 'aria-label': 'Photon wavelength in nanometers' });
     const val = el('span', { class: 'val' });
-    const one = el('button', { class: 'primary', html: ICON.zap + ' Fire one photon' });
-    const ten = el('button', {}, 'Fire ten photons');
+    const one = el('button', { class: 'primary', html: ICON.zap + ' Observe one photon' });
+    const ten = el('button', {}, 'Plot 10-photon trial');
     const reset = el('button', { html: ICON.reset + ' Reset the silicon' });
     const formula = el('p', { class: 'status-line' });
     const status = el('p', { class: 'status-line', role: 'status', 'aria-live': 'polite' });
     stage.append(el('div', { class: 'slider-row' }, [el('label', {}, 'Wavelength'), range, val]), formula, el('div', { class: 'tool-row' }, [one, ten, reset]), status);
-    const gr = makeCanvas(stage, 860, 230, 'Graph of wavelength versus charge generated, built from your trials');
+    const gr = makeCanvas(stage, 640, 270, 'Graph of wavelength versus heat generated by 10 photons, built from your trials');
+    gr.c.classList.add('photon-graph');
     const clearGraph = el('button', { html: ICON.reset + ' Clear the graph' });
-    stage.append(el('p', { class: 'caption', html: 'Each point is one burst of ten photons. Every freed electron adds 1.6 × 10<sup>−19</sup> C.' }), el('div', { class: 'tool-row' }, [clearGraph]));
+    stage.append(el('div', { class: 'graph-meta' }, [el('p', { class: 'caption', html: 'Photon count stays fixed at 10. The graph compares wavelength with heat generated.' }), clearGraph]));
     clearGraph.addEventListener('click', () => { st.pts = []; setTask('graph', false, scene); drawGraph(); persistWork(); });
     function drawGraph() {
-      const g = gr.ctx, GX0 = 90, GX1 = 820, GY0 = 30, GY1 = 176;
-      const gx = nm => lerp(GX0, GX1, (nm - 400) / 1000), Q_MAX = 16, gy = v => lerp(GY1, GY0, v / Q_MAX);
-      g.clearRect(0, 0, 860, 230);
+      const g = gr.ctx, GX0 = 76, GX1 = 616, GY0 = 40, GY1 = 196;
+      const gx = nm => lerp(GX0, GX1, (nm - 400) / 1000), HEAT_MAX = 20, gy = v => lerp(GY1, GY0, v / HEAT_MAX);
+      g.clearRect(0, 0, 640, 270);
+      g.fillStyle = C.ink; g.font = '700 13px Roboto Mono, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('WAVELENGTH VS HEAT GENERATED', (GX0 + GX1) / 2, 14);
       // spectrum strip under the axis
       for (let nm = 400; nm < 1400; nm += 5) { g.fillStyle = wlColor(nm, nm > 750 ? 0.35 : 0.8); g.fillRect(gx(nm), GY1 + 4, gx(nm + 5) - gx(nm) + 0.5, 8); }
       g.save(); g.strokeStyle = '#e7e5e4'; g.lineWidth = 1;
-      [0, 8, 16].forEach(v => { g.beginPath(); g.moveTo(GX0, gy(v)); g.lineTo(GX1, gy(v)); g.stroke(); });
+      [0, 5, 10, 15, 20].forEach(v => { g.beginPath(); g.moveTo(GX0, gy(v)); g.lineTo(GX1, gy(v)); g.stroke(); });
       g.strokeStyle = C.ink; g.lineWidth = 1.5; g.beginPath(); g.moveTo(GX0, GY0 - 6); g.lineTo(GX0, GY1); g.lineTo(GX1 + 6, GY1); g.stroke();
-      g.fillStyle = C.muted; g.font = '600 12px Inter, sans-serif'; g.textBaseline = 'middle';
-      g.textAlign = 'right'; [0, 8, 16].forEach(v => g.fillText(String(v), GX0 - 8, gy(v)));
-      g.textAlign = 'center'; [400, 600, 800, 1000, 1200, 1400].forEach(nm => g.fillText(String(nm), gx(nm), GY1 + 24));
-      g.font = '700 10px Roboto Mono, monospace'; g.fillText('WAVELENGTH (nm)', (GX0 + GX1) / 2, GY1 + 44);
-      g.save(); g.translate(22, (GY0 + GY1) / 2); g.rotate(-Math.PI / 2); g.fillText('CHARGE GENERATED (× 10⁻¹⁹ C)', 0, 0); g.restore();
+      g.fillStyle = C.muted; g.font = '600 14px Inter, sans-serif'; g.textBaseline = 'middle';
+      g.textAlign = 'right'; [0, 5, 10, 15, 20].forEach(v => g.fillText(String(v), GX0 - 8, gy(v)));
+      g.textAlign = 'center'; [400, 600, 800, 1000, 1200, 1400].forEach(nm => g.fillText(String(nm), gx(nm), GY1 + 27));
+      g.font = '700 12px Roboto Mono, monospace'; g.fillText('WAVELENGTH (nm)', (GX0 + GX1) / 2, GY1 + 54);
+      g.save(); g.translate(18, (GY0 + GY1) / 2); g.rotate(-Math.PI / 2); g.fillText('HEAT, 10 PHOTONS (eV)', 0, 0); g.restore();
       g.restore();
-      // the threshold appears once your data brackets it
+      // the threshold appears once your data brackets it; its label sits inside the plot, clear of the title
       if (graphDone()) {
         const tx = gx(1240 / BAND_GAP);
         g.save(); g.strokeStyle = C.ink; g.setLineDash([5, 4]); g.lineWidth = 1.5; g.beginPath(); g.moveTo(tx, GY0 - 6); g.lineTo(tx, GY1); g.stroke(); g.restore();
-        drawPill(g, '1.1 eV threshold, about 1100 nm', tx, GY0 - 12, C.ink, 11);
+        drawPill(g, '1.1 eV threshold, about 1100 nm', tx - 10, GY0 + 14, C.ink, 13, 'right');
       } else if (!st.pts.length) {
-        g.fillStyle = C.muted; g.font = '600 14px Inter, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        g.fillText('Fire ten photons to plot your first point.', (GX0 + GX1) / 2, (GY0 + GY1) / 2);
+        g.fillStyle = C.muted; g.font = '600 16px Inter, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillText('Choose a wavelength, then plot a 10-photon trial.', (GX0 + GX1) / 2, (GY0 + GY1) / 2);
       }
       st.pts.forEach(p => {
-        const x = gx(p.nm), y = gy(p.q);
+        const x = gx(p.nm), y = gy(p.heat);
         g.fillStyle = wlColor(p.nm); g.strokeStyle = C.ink; g.lineWidth = 1.5;
         g.beginPath(); g.arc(x, y, 7, 0, Math.PI * 2); g.fill(); g.stroke();
       });
     }
-    function plot(nm, q) {
-      st.pts = st.pts.filter(p => p.nm !== nm); st.pts.push({ nm, q });
+    function plot(nm, heat) {
+      st.pts = st.pts.filter(p => p.nm !== nm); st.pts.push({ nm, heat });
       if (graphDone()) finishTask('graph', scene);
       drawGraph(); persistWork();
     }
@@ -766,7 +806,7 @@ scenes.push({
     function update() {
       const E = photonEV(st.nm);
       val.textContent = st.nm + ' nm, ' + bandName(st.nm);
-      formula.innerHTML = `Shorter wavelength = more energy. <span class="mono">1240 ÷ ${st.nm} nm = ${E.toFixed(2)} eV</span>` + (E >= BAND_GAP ? ' (enough to excite an electron)' : ' (below the 1.1 eV threshold)');
+      formula.innerHTML = `Shorter wavelength = more energy. <span class="mono">1240 ÷ ${st.nm} nm = ${E.toFixed(2)} eV</span>` + (E >= BAND_GAP ? ' (enough energy to create a pair)' : ' (below the 1.1 eV threshold)');
       persistWork();
     }
     range.addEventListener('input', () => { st.nm = +range.value; update(); });
@@ -800,14 +840,15 @@ scenes.push({
     }
     function finishBatch(bt) {
       if (scene !== current) return;
-      const E = photonEV(bt.nm);
-      if (bt.n === 10) plot(bt.nm, +(bt.freed * 1.6).toFixed(1));
+      const E = photonEV(bt.nm), heat = bt.freed * heatEV(bt.nm);
+      if (bt.n === 10) plot(bt.nm, +heat.toFixed(2));
       if (bt.n === 1) {
-        if (bt.freed) { st.free = true; status.innerHTML = `One photon, one electron freed. It carried <span class="mono">${E.toFixed(2)} eV</span>, so <span class="mono">${(E - BAND_GAP).toFixed(2)} eV</span> became heat.`; }
+        if (bt.freed) { st.free = true; status.innerHTML = `One absorbed photon created one electron-hole pair. It carried <span class="mono">${E.toFixed(2)} eV</span>, so <span class="mono">${(E - BAND_GAP).toFixed(2)} eV</span> became heat.`; }
         else { st.miss = true; status.innerHTML = `The <span class="mono">${E.toFixed(2)} eV</span> photon passed straight through. Nothing was freed.`; }
       } else {
-        if (bt.freed) status.textContent = `Ten photons freed ${bt.freed} electrons. One photon frees one electron.`;
-        else { st.ten = true; finishTask('ten', scene); status.innerHTML = `Ten <span class="mono">${E.toFixed(2)} eV</span> photons, zero electrons freed. More photons do not make each one stronger.`; }
+        const charge = (bt.freed * 1.6).toFixed(1);
+        if (bt.freed) status.innerHTML = `10 photons: <span class="mono">${bt.freed} pairs · ${charge} × 10<sup>−19</sup> C · ${heat.toFixed(2)} eV heat</span>`;
+        else { st.ten = true; finishTask('ten', scene); status.innerHTML = `10 photons: <span class="mono">0 pairs · 0.0 × 10<sup>−19</sup> C · 0.00 eV heat</span>. These photons passed through in this model.`; }
       }
     }
     function draw() {
@@ -879,8 +920,8 @@ const PEOPLE = ['#fca5a5', '#fdba74', '#86efac', '#93c5fd', '#fcd34d', '#f9a8d4'
 scenes.push({
   heading: 'Holes Move Too',
   seeLabel: 'Slide people into the empty seat',
-  notes: "<strong>A hole is a missing electron, and it can move.</strong> When a neighbor electron hops into a hole, the hole jumps to where that electron was. Picture a full row with one empty seat: as each person slides over one seat, the empty seat travels the other way. <strong>Both carry charge.</strong> An electron carries a negative charge. A hole is a spot missing a negative charge, so it acts like a <strong>positive</strong> charge. Only electrons actually move, but tracking the hole is an easy way to follow all of those hops at once.",
-  notebook: "<strong>Predict first:</strong> if people keep sliding right, which way will the empty seat travel? Then move it to the far left end. <strong>Draw</strong> the row before and after, with an arrow for the people and an arrow for the empty seat.",
+  notes: "<strong>A hole is a missing electron.</strong> When a neighboring electron hops into it, the hole appears where that electron used to be. The electron moves one way while the hole appears to move the other. Electrons carry negative charge. A hole, missing that negative charge, behaves like a <strong>positive</strong> charge. Tracking holes lets us describe many electron hops at once.",
+  notebook: "<strong>Predict:</strong> if people slide right, which way will the empty seat move? Move it to the far left. <strong>Draw</strong> the row before and after, with one arrow for the people and one for the empty seat.",
   build(stage) {
     const st = sceneState('seats', { e: 7, order: [0, 1, 2, 3, 4, 5, 6, -1], moves: 0 });
     requireTask('far', 'Move the empty seat to the far left end');
@@ -1200,8 +1241,8 @@ scenes.push({
 scenes.push({
   heading: 'Power the Fan',
   seeLabel: 'Click the silicon to free electron-hole pairs',
-  notes: "<strong>The junction splits electron-hole pairs, and that split is the current.</strong> A pair freed near the junction gets pulled apart: the electron goes up to the metal fingers, the hole goes down. With the circuit closed, electrons flow through the wire, spin the fan, and return through the back contact to fill holes. Pairs freed too far away usually find each other again, and the energy becomes heat.",
-  notebook: "<strong>Predict first:</strong> will a pair freed deep in the cell reach the fan? Test a near click and a far click, then close the switch and power the fan. <strong>Draw</strong> the full loop: photon, pair, junction push, fingers, wire, fan, back contact. Then <strong>apply</strong> what you learned about wavelengths: what are two details that could affect a solar cell's efficiency?",
+  notes: "<strong>The junction separates electron-hole pairs.</strong> Near the junction, electrons move to the metal fingers, and holes move to the back contact. With the circuit closed, electrons travel through the wire and fan before returning. In this model, pairs made too far from the junction recombine, and their energy becomes heat.",
+  notebook: "<strong>Predict:</strong> will a pair made deep in the cell reach the fan? Test one near and one far, then close the switch and power the fan. <strong>Draw</strong> the path: photon, pair, junction, fingers, wire, fan, back contact. List two design details that could change efficiency.",
   build(stage) {
     const st = sceneState('fan', { closed: false, delivered: 0, lost: 0, near: false, far: false });
     requireTask('near', 'Free a pair near the junction and watch it split');
@@ -1341,7 +1382,9 @@ function buildLab(stage, mode) {
   const scene = current;
   if (mode === 'fair') requireTask('fair', 'Run 3 trials that change only one variable');
   else requireTask('best', 'Build a cell with ' + TARGET_EFF + '% efficiency or higher');
-  const { ctx } = makeCanvas(stage, 860, 300, 'Cross-section of a test solar cell and where the sunlight energy goes');
+  const labCanvas = makeCanvas(stage, 860, 300, 'Cross-section of a test solar cell and where the sunlight energy goes');
+  labCanvas.c.classList.add('lab-canvas');
+  const { ctx } = labCanvas;
   const rowOf = (label, items, key, fmt) => {
     const chips = items.map(v => el('button', { class: 'chip', 'aria-pressed': 'false' }, fmt(v)));
     chips.forEach((ch, i) => ch.addEventListener('click', () => { d[key] = key === 'surface' ? items[i].id : items[i]; syncChips(); draw(); persistWork(); }));
@@ -1474,8 +1517,8 @@ function buildLab(stage, mode) {
 scenes.push({
   heading: 'Design a Fair Test',
   seeLabel: 'Test one variable inside the cell',
-  notes: "<strong>Engineers improve cells by changing what is inside them.</strong> You can change three things: the surface coating, how far apart the metal fingers are, and how thick the silicon is. A <strong>fair test</strong> changes only one variable and keeps the others the same. <strong>Efficiency</strong> is the percent of sunlight energy that comes out as electricity. The values here come from a simplified comparison model, not measurements of a commercial panel.",
-  notebook: "Pick <strong>one</strong> variable. <strong>Write</strong> your question and your hypothesis first. <strong>Make a table</strong>: trial, setting, efficiency. Run at least three trials that change only that variable. Tap <strong>Copy for Google Sheets</strong>, paste into a new sheet, and <strong>graph</strong> your setting against efficiency. Then <strong>explain</strong> your result in one sentence using what you learned in Steps 2 to 7.",
+  notes: "<strong>Engineers can change a cell's surface, metal-finger spacing, and silicon thickness.</strong> A <strong>fair test</strong> changes one variable while holding the other two constant. <strong>Efficiency</strong> is the percent of sunlight energy delivered as electricity. This simulation is a comparison model, not a measurement of a commercial panel.",
+  notebook: "Choose <strong>one variable</strong>. <strong>Write</strong> your question and hypothesis. Make a trial-setting-efficiency table. Run at least three trials that change only that variable. Copy the data to Google Sheets, <strong>graph</strong> setting versus efficiency, and <strong>write</strong> the pattern you found using Steps 2 to 7.",
   build(stage) { buildLab(stage, 'fair'); }
 });
 
@@ -1665,13 +1708,12 @@ const stageEl = $('#stage'), stageLabel = $('#stageLabel'), stepHeadingEl = $('#
 const stepIndicator = $('#stepIndicator'), stepNumEl = $('#stepNum'), stepTitleEl = $('#stepTitle'), progressFill = $('#progressFill');
 const prevBtn = $('#prevBtn'), nextBtn = $('#nextBtn'), resetBtn = $('#resetBtn'), notebookDone = $('#notebookDone'), gateStatus = $('#gateStatus');
 const teacherBar = $('#teacherBar'), stepJump = $('#stepJump');
-// Teacher mode: ?teacher=1 unlocks every step and the practice questions; ?teacher=0 leaves. Sticky on this device.
+// Teacher mode is URL-only so a preview cannot leave a student device unlocked.
 const _tParam = new URLSearchParams(location.search).get('teacher');
-try { if (_tParam === '1') localStorage.setItem('solar_teacher', '1'); if (_tParam === '0') localStorage.removeItem('solar_teacher'); } catch (e) {}
-let TEACHER = _tParam === '1';
-if (_tParam !== '0') { try { TEACHER = TEACHER || localStorage.getItem('solar_teacher') === '1'; } catch (e) {} }
+const TEACHER = _tParam === '1';
 
-const WORK_KEY = 'solar-engineering-work-v3';
+// Keep teacher exploration completely separate from student work and progress.
+const WORK_KEY = TEACHER ? 'solar-engineering-teacher-preview-v1' : 'solar-engineering-work-v3';
 let WORK = {};
 try { const parsed = JSON.parse(localStorage.getItem(WORK_KEY)); if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) WORK = parsed; } catch (e) { WORK = {}; }
 let workTimer = null, storageOK = true;
@@ -1693,7 +1735,7 @@ function updateGate() {
   nextBtn.disabled = !canAdvance();
   gateStatus.classList.toggle('complete', g.complete && !TEACHER);
   gateStatus.textContent = !storageOK ? 'Storage unavailable. Keep your answers in your notebook.'
-    : TEACHER ? 'Teacher mode: every step is unlocked. Use the menu above to jump around. Add ?teacher=0 to the link to leave.'
+    : TEACHER ? 'Teacher preview: all steps unlocked. Student progress is separate.'
     : left.length ? `Still to do (${left.length}): ${left[0][1]}.`
     : !g.notebook ? 'Finish your notes and notebook task, then confirm above.'
     : 'Step complete.';
@@ -1711,6 +1753,7 @@ function setScene(i, opts = {}) {
   if (window._qUnsub) { try { window._qUnsub(); } catch (e) {} window._qUnsub = null; }
   const s = scenes[i];
   stageEl.innerHTML = '';
+  stageEl.className = 'stage-body';
   stageLabel.textContent = s.seeLabel || 'What you see';
   stepHeadingEl.textContent = s.heading;
   stepNumEl.textContent = 'Step ' + pad2(i + 1);

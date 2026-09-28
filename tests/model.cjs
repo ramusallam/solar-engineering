@@ -7,11 +7,14 @@ const main = scripts[0];
 const model = main.slice(main.indexOf('const BAND_GAP'), main.indexOf('// ====================================================='+'\n//  Helpers'));
 const practice = main.slice(main.indexOf('const PRACTICE = ['), main.indexOf("scenes.push({\n  heading: 'Practice Questions'"));
 const ctx = {}; vm.createContext(ctx);
-vm.runInContext(model + '\n' + practice + '\nthis.api={photonEV,frees,cellModel,fairTest,SURFACES,SPACINGS,THICKNESSES,TARGET_EFF,PRACTICE,assessPractice,panelVolts,panelAmps};', ctx);
+vm.runInContext(model + '\n' + practice + '\nthis.api={photonEV,frees,heatEV,batchHeatEV,cellModel,fairTest,SURFACES,SPACINGS,THICKNESSES,TARGET_EFF,PRACTICE,assessPractice,panelVolts,panelAmps};', ctx);
 const A = ctx.api;
 // photon threshold
 assert.ok(A.frees(550) && A.frees(1120) && !A.frees(1130) && !A.frees(1300));
 assert.equal(A.photonEV(620).toFixed(2), '2.00');
+assert.equal(A.batchHeatEV(400).toFixed(2), '20.00');
+assert.equal(A.batchHeatEV(620).toFixed(2), '9.00');
+assert.equal(A.batchHeatEV(1300), 0);
 // recap cell: dark = nothing; volts slide 0.4 to 0.6, amps slide 0.1 to 0.3
 assert.equal(A.panelVolts(0), 0); assert.equal(A.panelAmps(0), 0);
 assert.ok(A.panelAmps(100) > A.panelAmps(50));
@@ -47,10 +50,15 @@ assert.equal(A.assessPractice(8, '18%').state, 'ok');
 // worked answers agree with the model
 assert.equal(Math.round(14 * 90 / 70), A.PRACTICE[9].answer);
 assert.ok(Math.abs(1240 / 620 - A.PRACTICE[1].answer) < 1e-9);
+assert.match(main, /const E = photonEV\(bt\.nm\), heat = bt\.freed \* heatEV\(bt\.nm\);/, 'heat is calculated only for absorbed photons');
+assert.match(main, /if \(bt\.n === 10\) plot\(bt\.nm, \+heat\.toFixed\(2\)\);/, 'the graph holds photon count at 10 and plots heat against wavelength');
+assert.ok(html.includes('WAVELENGTH VS HEAT GENERATED'), 'the graph names both plotted variables');
 // no emoji or dashes that break the house style in authored copy
 assert.ok(!/[–—]/.test(html), 'no en or em dashes');
 assert.ok(!/[\u{1F300}-\u{1FAFF}✅✔]/u.test(html), 'no emoji or check glyphs');
 assert.ok(!html.includes('TEACHER_CODE'), 'no client-side teacher passcode');
+assert.ok(!html.includes('#3b82f6'), 'use the Spark indigo instead of the banned blue');
 assert.ok(!html.includes('photoelectric effect'), 'use photovoltaic effect for the silicon cell process');
-assert.ok(html.includes('simplified comparison model'), 'label simulated efficiencies as a comparison model');
+assert.ok(html.includes('simulation is a comparison model'), 'label simulated efficiencies as a comparison model');
+assert.ok(html.includes('Longer-wavelength photons pass through, making neither a pair nor heat'), 'the simplified heat model distinguishes absorption from transmission');
 console.log('model.cjs: all checks passed');

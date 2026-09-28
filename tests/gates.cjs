@@ -32,4 +32,7 @@ assert.match(main, /if \(!TEACHER && i > current && \(i !== current \+ 1 \|\| !c
 assert.match(main, /e\.key === 'ArrowRight' && current < scenes\.length - 1\) setScene\(current \+ 1\)/);
 assert.match(main, /if \(!TEACHER && !\(done\(i\) && a\.seen\)\) return;/);
 assert.match(main, /while \(resumeAt < saved && gateFor\(resumeAt\)\.complete\) resumeAt\+\+;/);
+assert.match(main, /const TEACHER = _tParam === '1';/, 'teacher mode is controlled only by the URL');
+assert.match(main, /const WORK_KEY = TEACHER \? 'solar-engineering-teacher-preview-v1' : 'solar-engineering-work-v3';/, 'teacher preview has separate saved work');
+assert.ok(!main.includes('solar_teacher'), 'teacher mode must not stick on a student browser');
 console.log('gates.cjs: all checks passed');
